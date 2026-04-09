@@ -1,0 +1,44 @@
+Bootstrap: docker
+From: condaforge/mambaforge:latest
+Stage: builder
+
+%post
+    mamba update -n base -y conda mamba
+    mamba create -p /opt/qc -y -c bioconda -c conda-forge \
+        python=3.9 \
+        longqc \
+        kraken2 \
+        meryl \
+        genomescope2 \
+        pigz \
+        samtools \
+        seqkit
+    mamba clean -a -y
+    sed -i '1i #!/usr/bin/env python' /opt/qc/bin/longQC.py
+    chmod +x /opt/qc/bin/longQC.py
+
+Bootstrap: docker
+From: debian:bookworm-slim
+Stage: final
+
+%labels
+    Author assembly_pipeline
+    Description QC tools for HiFi genome assembly
+
+%files from builder
+    /opt/qc /opt/qc
+
+%environment
+    export PATH="/opt/qc/bin:$PATH"
+    export LC_ALL=C
+
+%runscript
+    exec "$@"
+
+%test
+    export PATH="/opt/qc/bin:$PATH"
+    longQC.py --version
+    kraken2 --version
+    meryl --version
+    genomescope2 --help | head -1
+    pigz --version
