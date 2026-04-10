@@ -1,0 +1,36 @@
+Bootstrap: docker
+From: condaforge/mambaforge:latest
+Stage: builder
+
+%post
+    mamba create -p /opt/btk -y -c bioconda -c conda-forge \
+        python=3.9 \
+        pysam \
+        blast \
+        minimap2 \
+        samtools \
+        seqkit \
+        pigz
+
+    /opt/btk/bin/pip install blobtoolkit
+
+    mamba clean -a -y
+
+Bootstrap: docker
+From: debian:bookworm-slim
+Stage: final
+
+%labels
+    Description BlobToolKit + Diamond + minimap2
+
+%files from builder
+    /opt/btk /opt/btk
+
+%environment
+    export PATH="/opt/btk/bin:$PATH"
+
+%test
+    export PATH="/opt/btk/bin:$PATH"
+    blobtools --help | head -1
+    blastn -version
+    minimap2 --version
