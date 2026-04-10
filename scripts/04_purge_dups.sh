@@ -1,60 +1,65 @@
 #!/bin/bash
 #SBATCH --job-name=purge_dups
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=20
+#SBATCH --cpus-per-task=32
 #SBATCH --mem-per-cpu=4G
 #SBATCH --time=12:00:00
 #SBATCH --output=logs/04_purge_dups_%j.log
 
-SIF="$(pwd)/images/sif/polish.sif"
-READS="$(pwd)/raw_reads/lmultiflorum_hifi.fastq.gz"
-ASM_GZ="$(pwd)/results/02_assembly/lmultiflorum.bp.p_ctg.fa.gz"
-OUTDIR="$(pwd)/results/03_purge"
-THREADS=${SLURM_CPUS_PER_TASK}
+set -euo pipefail
+
+SIF=$(readlink -f images/sif/polish.sif)
+READS="raw_reads/lmultiflorum_hifi.fastq.gz"
+ASM_GZ="results/02_assembly/lmultiflorum.bp.p_ctg.fa.gz"
+OUTDIR="results/03_purge"
+TRACKING="results/assembly_tracking.tsv"
+T=${SLURM_CPUS_PER_TASK}
+ROOT=$(pwd)
+
+run() { singularity exec "${SIF}" "$@"; }
+
+track() {
+    local stage=$1 fa=$2
+    local stats nseq size
+    stats=$(run seqkit stats -T "${fa}" | tail -1)
+    nseq=$(echo "${stats}" | cut -f4)
+    size=$(echo "${stats}" | cut -f5)
+    printf '%s\t%s\t%s\t%s\n' "${stage}" "$(readlink -f "${fa}")" "${nseq}" "${size}" >> "${TRACKING}"
+    echo "${stage}: ${nseq} contigs, ${size} bp"
+}
 
 mkdir -p "${OUTDIR}" logs
+[[ -f "${TRACKING}" ]] || printf 'stage\tfile\tcontigs\tsize\n' > "${TRACKING}"
 
-singularity exec "${SIF}" pigz -dk -p "${THREADS}" "${ASM_GZ}"
-ASM="${ASM_GZ%.gz}"
-
+run pigz -dcp "${T}" "${ASM_GZ}" > "${OUTDIR}/assembly.fa"
+cp "${READS}" "${OUTDIR}/reads.fastq.gz"
 cd "${OUTDIR}"
 
-# Map HiFi reads to assembly
-singularity exec "${SIF}" \
-    minimap2 -t "${THREADS}" -xmap-hifi "${ASM}" "${READS}" \
-    | singularity exec "${SIF}" pigz -p 4 \
-    > aligned.paf.gz
+run minimap2 -t "${T}" -xmap-hifi assembly.fa reads.fastq.gz \
+    | run pigz -p 4 > aligned.paf.gz
 
-# Coverage stats and cutoffs
-singularity exec "${SIF}" pbcstat aligned.paf.gz
-singularity exec "${SIF}" calcuts PB.stat > cutoffs
+run pbcstat aligned.paf.gz
+run calcuts PB.stat > cutoffs
 
-# Self-alignment
-singularity exec "${SIF}" split_fa "${ASM}" > asm.split.fa
-singularity exec "${SIF}" \
-    minimap2 -t "${THREADS}" -xasm5 -DP asm.split.fa asm.split.fa \
-    | singularity exec "${SIF}" pigz -p 4 \
-    > self_aln.paf.gz
+run split_fa assembly.fa > asm.split.fa
+run minimap2 -t "${T}" -xasm5 -DP asm.split.fa asm.split.fa \
+    | run pigz -p 4 > self_aln.paf.gz
 
-# Purge
-singularity exec "${SIF}" \
-    purge_dups -2 -T cutoffs -c PB.base.cov "${ASM}" > dups.bed
+run purge_dups -2 -T cutoffs -c PB.base.cov assembly.fa > dups.bed
+run get_seqs -e dups.bed assembly.fa || true
 
-# Get purged + haplotig sequences
-singularity exec "${SIF}" get_seqs -e dups.bed "${ASM}"
-mv purged.fa lmultiflorum.purged.fa
-mv hap.fa lmultiflorum.haplotigs.fa
+if [[ -s purged.fa ]]; then
+    mv purged.fa lmultiflorum.purged.fa
+    mv hap.fa lmultiflorum.haplotigs.fa
+else
+    echo "WARN: nothing purged, keeping original"
+    mv assembly.fa lmultiflorum.purged.fa
+    touch lmultiflorum.haplotigs.fa
+fi
 
-echo "=== PRE-PURGE ==="
-singularity exec "${SIF}" seqkit stats -a "${ASM}"
-echo "=== POST-PURGE ==="
-singularity exec "${SIF}" seqkit stats -a lmultiflorum.purged.fa
-echo "=== HAPLOTIGS ==="
-singularity exec "${SIF}" seqkit stats -a lmultiflorum.haplotigs.fa
+run pigz -p "${T}" lmultiflorum.purged.fa lmultiflorum.haplotigs.fa
+rm -f aligned.paf.gz self_aln.paf.gz asm.split.fa assembly.fa reads.fastq.gz \
+      PB.stat PB.base.cov PB.cov2.bin PB.cov.wig cutoffs dups.bed
 
-singularity exec "${SIF}" pigz -p "${THREADS}" lmultiflorum.purged.fa
-singularity exec "${SIF}" pigz -p "${THREADS}" lmultiflorum.haplotigs.fa
-
-rm -f aligned.paf.gz self_aln.paf.gz asm.split.fa
-rm -f PB.stat PB.base.cov PB.cov2.bin cutoffs dups.bed
-rm -f "${ASM}"
+cd "${ROOT}"
+track "assembly-purged" "${OUTDIR}/lmultiflorum.purged.fa.gz"
