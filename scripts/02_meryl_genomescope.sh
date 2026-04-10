@@ -10,35 +10,24 @@ SIF="images/sif/qc_tools.sif"
 READS="raw_reads/lmultiflorum_hifi.fastq.gz"
 MERYL_DIR="results/01_qc/meryl"
 GS_DIR="results/01_qc/genomescope2"
-THREADS=${SLURM_CPUS_PER_TASK}
+T=${SLURM_CPUS_PER_TASK}
 KMER=21
 
 mkdir -p "${MERYL_DIR}" "${GS_DIR}" logs
 
 singularity exec "${SIF}" \
-    meryl count \
-        k=${KMER} \
-        threads=${THREADS} \
-        memory=64 \
-        "${READS}" \
-        output "${MERYL_DIR}/lmultiflorum.meryl"
+    meryl count k=${KMER} threads=${T} memory=64 \
+    "${READS}" output "${MERYL_DIR}/lmultiflorum.meryl"
 
 singularity exec "${SIF}" \
-    meryl histogram \
-        "${MERYL_DIR}/lmultiflorum.meryl" \
-        > "${MERYL_DIR}/lmultiflorum.hist"
+    meryl histogram "${MERYL_DIR}/lmultiflorum.meryl" \
+    > "${MERYL_DIR}/lmultiflorum.hist"
 
-# GenomeScope2 (diploid, p=2)
 singularity exec "${SIF}" \
-    genomescope2 \
-        -i "${MERYL_DIR}/lmultiflorum.hist" \
-        -o "${GS_DIR}" \
-        -k ${KMER} \
-        -p 2 \
-        --name_prefix lmultiflorum
+    genomescope2 -i "${MERYL_DIR}/lmultiflorum.hist" \
+    -o "${GS_DIR}" -k ${KMER} -p 2 --name_prefix lmultiflorum
 
-# Tar the meryl DB (cluster TOS)
 tar cf - -C "${MERYL_DIR}" lmultiflorum.meryl \
-    | singularity exec "${SIF}" pigz -p "${THREADS}" \
+    | singularity exec "${SIF}" pigz -p "${T}" \
     > "${MERYL_DIR}/lmultiflorum.meryl.tar.gz"
 rm -rf "${MERYL_DIR}/lmultiflorum.meryl"
