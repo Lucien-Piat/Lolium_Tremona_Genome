@@ -21,8 +21,7 @@ singularity exec "${SIF}" \
         --telo-m TTTAGGG \
         "${READS}"
 
-# Convert primary + alternate GFA to FASTA
-for TYPE in bp.p_ctg bp.a_ctg; do
+for TYPE in bp.p_ctg bp.hap1.p_ctg bp.hap2.p_ctg; do
     awk '/^S/{print ">"$2; print $3}' "${PREFIX}.${TYPE}.gfa" \
         | singularity exec "${SIF}" pigz -p "${THREADS}" \
         > "${PREFIX}.${TYPE}.fa.gz"
