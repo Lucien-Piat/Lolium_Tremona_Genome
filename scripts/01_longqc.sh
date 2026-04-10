@@ -9,11 +9,9 @@
 SIF="images/sif/qc_tools.sif"
 READS="raw_reads/lmultiflorum_hifi.fastq.gz"
 OUTDIR="results/01_qc/longqc"
-THREADS=${SLURM_CPUS_PER_TASK}
+T=${SLURM_CPUS_PER_TASK}
+
+mkdir -p "${OUTDIR}" logs
 
 singularity exec "${SIF}" \
-    longQC.py sampleqc \
-        -x pb-hifi \
-        -p "${THREADS}" \
-        -o "${OUTDIR}" \
-        "${READS}"
+    longQC.py sampleqc -x pb-hifi -p "${T}" -o "${OUTDIR}" "${READS}"
