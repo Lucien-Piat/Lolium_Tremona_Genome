@@ -9,7 +9,7 @@
 set -euo pipefail
 
 SIF=$(readlink -f images/sif/hifiasm.sif)
-READS="raw_reads/lmultiflorum_hifi.fastq.gz"
+READS=$(readlink -f raw_reads/lmultiflorum_hifi.fastq.gz)
 OUTDIR="results/02_assembly"
 TRACKING="results/assembly_tracking.tsv"
 T=${SLURM_CPUS_PER_TASK}
@@ -30,7 +30,7 @@ track() {
 mkdir -p "${OUTDIR}" logs
 [[ -f "${TRACKING}" ]] || printf 'stage\tfile\tcontigs\tsize\n' > "${TRACKING}"
 
-cp "${READS}" "${OUTDIR}/reads.fastq.gz"
+ln -sf "${READS}" "${OUTDIR}/reads.fastq.gz"
 cd "${OUTDIR}"
 
 run hifiasm -t "${T}" -o lmultiflorum --telo-m TTTAGGG reads.fastq.gz
@@ -44,6 +44,6 @@ rm -f lmultiflorum*.bin reads.fastq.gz
 run pigz -p "${T}" lmultiflorum*.gfa
 
 cd "${ROOT}"
-track "assembly-raw"       "${OUTDIR}/lmultiflorum.bp.p_ctg.fa.gz"
-track "hap1-raw"           "${OUTDIR}/lmultiflorum.bp.hap1.p_ctg.fa.gz"
-track "hap2-raw"           "${OUTDIR}/lmultiflorum.bp.hap2.p_ctg.fa.gz"
+track "assembly-raw"  "${OUTDIR}/lmultiflorum.bp.p_ctg.fa.gz"
+track "hap1-raw"      "${OUTDIR}/lmultiflorum.bp.hap1.p_ctg.fa.gz"
+track "hap2-raw"      "${OUTDIR}/lmultiflorum.bp.hap2.p_ctg.fa.gz"
