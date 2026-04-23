@@ -12,7 +12,7 @@ SIF="images/sif/qc_tools.sif"
 READS="raw_reads/lmultiflorum_hifi.fastq.gz"
 MERYL_DIR="results/01_qc/meryl"
 GS_DIR="results/01_qc/genomescope2"
-T=${SLURM_CPUS_PER_TASK}
+T=${SLURM_CPUS_PER_TASK:-4}
 KMER=21
 MERYL_MEM=64 
 
