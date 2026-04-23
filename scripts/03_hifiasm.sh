@@ -2,7 +2,7 @@
 #SBATCH --job-name=hifiasm
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=48
-#SBATCH --mem-per-cpu=3G
+#SBATCH --mem-per-cpu=3500M
 #SBATCH --time=24:00:00
 #SBATCH --output=logs/03_hifiasm_%j.log
 
@@ -12,7 +12,7 @@ SIF=$(readlink -f images/sif/hifiasm.sif)
 READS=$(readlink -f raw_reads/lmultiflorum_hifi.fastq.gz)
 OUTDIR="results/02_assembly"
 TRACKING="results/assembly_tracking.tsv"
-T=${SLURM_CPUS_PER_TASK}
+T=${SLURM_CPUS_PER_TASK:-4}
 ROOT=$(pwd)
 
 run() { singularity exec "${SIF}" "$@"; }
@@ -33,7 +33,9 @@ mkdir -p "${OUTDIR}" logs
 ln -sf "${READS}" "${OUTDIR}/reads.fastq.gz"
 cd "${OUTDIR}"
 
+echo "Starting hifiasm at $(date)"
 run hifiasm -t "${T}" -o lmultiflorum --telo-m TTTAGGG reads.fastq.gz
+echo "hifiasm finished at $(date)"
 
 for TYPE in bp.p_ctg bp.hap1.p_ctg bp.hap2.p_ctg; do
     awk '/^S/{print ">"$2; print $3}' "lmultiflorum.${TYPE}.gfa" \
@@ -44,6 +46,8 @@ rm -f lmultiflorum*.bin reads.fastq.gz
 run pigz -p "${T}" lmultiflorum*.gfa
 
 cd "${ROOT}"
-track "assembly-raw"  "${OUTDIR}/lmultiflorum.bp.p_ctg.fa.gz"
-track "hap1-raw"      "${OUTDIR}/lmultiflorum.bp.hap1.p_ctg.fa.gz"
-track "hap2-raw"      "${OUTDIR}/lmultiflorum.bp.hap2.p_ctg.fa.gz"
+track "assembly-raw" "${OUTDIR}/lmultiflorum.bp.p_ctg.fa.gz"
+track "hap1-raw"     "${OUTDIR}/lmultiflorum.bp.hap1.p_ctg.fa.gz"
+track "hap2-raw"     "${OUTDIR}/lmultiflorum.bp.hap2.p_ctg.fa.gz"
+
+echo "All done at $(date)"
