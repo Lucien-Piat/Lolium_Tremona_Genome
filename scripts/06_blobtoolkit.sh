@@ -9,19 +9,43 @@
 set -euo pipefail
 
 SIF=$(readlink -f images/sif/blobtoolkit.sif)
-READS="raw_reads/lmultiflorum_hifi.fastq.gz"
-ASM_GZ="results/04_organellar/lmultiflorum.nuclear.fa.gz"
+READS=$(readlink -f raw_reads/lmultiflorum_hifi.fastq.gz)
+ASM_GZ=$(readlink -f results/04_organellar/lmultiflorum.nuclear.fa.gz)
 OUTDIR="results/05_blobtoolkit"
 TRACKING="results/assembly_tracking.tsv"
 T=${SLURM_CPUS_PER_TASK:-4}
 ROOT=$(pwd)
 
-TAXDUMP="reference_data/taxdump"
+TAXDUMP="reference_data/ncbi_taxdump"
 BLASTDB_DIR="/cluster/project/clcgenomics/CLC_BLAST_DB"
 BLASTDB_NAME="nt"
 TAXID=4521
 
-run() { singularity exec --bind "${BLASTDB_DIR}" --env BLASTDB="${BLASTDB_DIR}" "${SIF}" "$@"; }
+CACHE="$(pwd)/.cache_blobtoolkit"
+mkdir -p "${CACHE}/home" "${CACHE}/matplotlib" "${CACHE}/fontconfig" \
+         "${OUTDIR}" "${TAXDUMP}" logs
+
+run() {
+    singularity exec \
+        --bind "${BLASTDB_DIR}" \
+        --env BLASTDB="${BLASTDB_DIR}" \
+        --env HOME="${CACHE}/home" \
+        --env MPLCONFIGDIR="${CACHE}/matplotlib" \
+        --env FONTCONFIG_PATH="${CACHE}/fontconfig" \
+        --env XDG_CACHE_HOME="${CACHE}" \
+        "${SIF}" "$@"
+}
+
+run_sh() {
+    singularity exec \
+        --bind "${BLASTDB_DIR}" \
+        --env BLASTDB="${BLASTDB_DIR}" \
+        --env HOME="${CACHE}/home" \
+        --env MPLCONFIGDIR="${CACHE}/matplotlib" \
+        --env FONTCONFIG_PATH="${CACHE}/fontconfig" \
+        --env XDG_CACHE_HOME="${CACHE}" \
+        "${SIF}" bash -c "$@"
+}
 
 track() {
     local stage=$1 fa=$2
@@ -33,17 +57,25 @@ track() {
     echo "${stage}: ${nseq} contigs, ${size} bp"
 }
 
-mkdir -p "${OUTDIR}" logs
 [[ -f "${TRACKING}" ]] || printf 'stage\tfile\tcontigs\tsize\n' > "${TRACKING}"
 
-run pigz -dcp "${T}" "${ASM_GZ}" > "${OUTDIR}/assembly.fa"
+if [[ ! -f "${TAXDUMP}/nodes.dmp" ]]; then
+    echo "Downloading NCBI taxdump..."
+    wget -q -O "${TAXDUMP}/new_taxdump.tar.gz" \
+        https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/new_taxdump/new_taxdump.tar.gz
+    tar xzf "${TAXDUMP}/new_taxdump.tar.gz" -C "${TAXDUMP}"
+    rm -f "${TAXDUMP}/new_taxdump.tar.gz"
+else
+    echo "Using cached taxdump at ${TAXDUMP}"
+fi
 
-echo "Mapping reads..."
-run minimap2 -t "${T}" -ax map-hifi "${OUTDIR}/assembly.fa" "${READS}" \
-    | run samtools sort -@ "${T}" -O BAM -o "${OUTDIR}/coverage.bam" -
-run samtools index -@ "${T}" "${OUTDIR}/coverage.bam"
+run pigz -dcp 4 "${ASM_GZ}" > "${OUTDIR}/assembly.fa"
 
-echo "Running blastn against nt..."
+run_sh "minimap2 -t $((T-4)) -ax map-hifi ${OUTDIR}/assembly.fa ${READS} \
+         | samtools sort -@ 4 -m 2G -O BAM -o ${OUTDIR}/coverage.bam -"
+run samtools index -@ 4 "${OUTDIR}/coverage.bam"
+
+echo "Step 2: blastn against nt (this is the long step)"
 run blastn \
     -db "${BLASTDB_DIR}/${BLASTDB_NAME}" \
     -query "${OUTDIR}/assembly.fa" \
@@ -54,7 +86,7 @@ run blastn \
     -num_threads "${T}" \
     -out "${OUTDIR}/blast.out"
 
-echo "Creating BlobDir..."
+echo "Step 3: building BlobDir"
 run blobtools create \
     --fasta "${OUTDIR}/assembly.fa" \
     --taxid "${TAXID}" \
@@ -71,7 +103,7 @@ run blobtools add \
     --taxdump "${TAXDUMP}" \
     "${OUTDIR}/blobdir"
 
-echo "Filtering contigs..."
+echo "Step 4: filtering to keep Streptophyta + no-hit contigs"
 run blobtools filter \
     --param bestsumorder_phylum--Keys=Streptophyta \
     --param bestsumorder_phylum--Keys=no-hit \
@@ -82,19 +114,21 @@ run blobtools filter \
 FILTERED="${OUTDIR}/filtered/assembly.filtered.fa"
 if [[ -f "${FILTERED}" ]]; then
     mv "${FILTERED}" "${OUTDIR}/lmultiflorum.decontam.fa"
+    echo "INFO: filtered assembly produced"
 else
     echo "WARN: no filtered output, keeping assembly as-is"
-    cp "${OUTDIR}/assembly.fa" "${OUTDIR}/lmultiflorum.decontam.fa"
+    mv "${OUTDIR}/assembly.fa" "${OUTDIR}/lmultiflorum.decontam.fa"
 fi
 
-run pigz -p "${T}" "${OUTDIR}/lmultiflorum.decontam.fa"
-
-# ---- Cleanup ----
-rm -f "${OUTDIR}/assembly.fa" "${OUTDIR}/coverage.bam" "${OUTDIR}/coverage.bam.bai"
-rm -f "${OUTDIR}/blast.out"
-rm -rf "${OUTDIR}/filtered"
+if run pigz -p "${T}" "${OUTDIR}/lmultiflorum.decontam.fa"; then
+    rm -f "${OUTDIR}/assembly.fa" \
+          "${OUTDIR}/coverage.bam" "${OUTDIR}/coverage.bam.bai" \
+          "${OUTDIR}/blast.out"
+    rm -rf "${OUTDIR}/filtered" "${CACHE}"
+else
+    echo "ERROR: output compression failed, keeping intermediates for debug" >&2
+    exit 1
+fi
 
 cd "${ROOT}"
 track "assembly-decontam" "${OUTDIR}/lmultiflorum.decontam.fa.gz"
-
-echo "BlobDir kept at: ${OUTDIR}/blobdir (use 'blobtools view' to explore)"
