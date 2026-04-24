@@ -1,0 +1,29 @@
+Bootstrap: docker
+From: mambaorg/micromamba:1.5.8
+
+%post
+    export MAMBA_ROOT_PREFIX=/opt/conda
+
+    micromamba install -y -n base -c bioconda -c conda-forge \
+        python=3.10 \
+        ragtag=2.1.0 \
+        quast=5.2.0 \
+        busco=5.8.2 \
+        seqkit=2.8.2 \
+        minimap2=2.28 \
+        samtools=1.21 \
+        pigz \
+        procps-ng
+
+    micromamba clean --all --yes
+
+    rm -rf /opt/conda/pkgs/cache/* 2>/dev/null || true
+    find /opt/conda -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
+    find /opt/conda -name '*.pyc' -delete 2>/dev/null || true
+
+%environment
+    export PATH=/opt/conda/bin:$PATH
+    export LC_ALL=C
+
+%runscript
+    exec "$@"
