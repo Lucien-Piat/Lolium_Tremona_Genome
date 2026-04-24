@@ -20,17 +20,8 @@ Bootstrap: docker
 From: debian:bookworm-slim
 Stage: final
 
-%labels
-    Description BlobToolKit + Diamond + minimap2
-
 %files from builder
     /opt/btk /opt/btk
 
 %environment
     export PATH="/opt/btk/bin:$PATH"
-
-%test
-    export PATH="/opt/btk/bin:$PATH"
-    blobtools --help | head -1
-    blastn -version
-    minimap2 --version

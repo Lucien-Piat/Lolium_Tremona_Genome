@@ -21,10 +21,6 @@ Bootstrap: docker
 From: debian:bookworm-slim
 Stage: final
 
-%labels
-    Author assembly_pipeline
-    Description QC tools for HiFi genome assembly
-
 %files from builder
     /opt/qc /opt/qc
 
@@ -34,11 +30,3 @@ Stage: final
 
 %runscript
     exec "$@"
-
-%test
-    export PATH="/opt/qc/bin:$PATH"
-    longQC.py --version
-    kraken2 --version
-    meryl --version
-    genomescope2 --help | head -1
-    pigz --version

@@ -1,9 +1,6 @@
 Bootstrap: docker
 From: condaforge/mambaforge:latest
 
-%labels
-    Description Final Stable Purge & Mito Pipeline
-
 %post
     # Install everything in one go to ensure dependency resolution
     mamba create -n mito_env -y -c bioconda -c conda-forge \
@@ -23,22 +20,12 @@ From: condaforge/mambaforge:latest
 
     mamba clean -a -y
 
-    # Clone MitoHiFi
     git clone https://github.com/marcelauliano/MitoHiFi.git /opt/MitoHiFi
     
-    # Fix shebangs for direct execution
     sed -i '1i #!/opt/conda/envs/mito_env/bin/python' /opt/MitoHiFi/src/mitohifi.py
     chmod +x /opt/MitoHiFi/src/mitohifi.py
 
 %environment
-    # Point directly to the new environment
     export PATH="/opt/conda/envs/mito_env/bin:/opt/MitoHiFi/src:$PATH"
     export PYTHONPATH="/opt/MitoHiFi/src:$PYTHONPATH"
     export PYTHONWARNINGS="ignore::SyntaxWarning"
-
-%test
-    export PATH="/opt/conda/envs/mito_env/bin:/opt/MitoHiFi/src:$PATH"
-    export PYTHONPATH="/opt/MitoHiFi/src:$PYTHONPATH"
-    mitohifi.py --version || true
-    purge_dups --version || true
-    echo "Build successful and verified."

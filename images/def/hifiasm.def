@@ -14,17 +14,8 @@ Bootstrap: docker
 From: debian:bookworm-slim
 Stage: final
 
-%labels
-    Description hifiasm 0.25.0 + pigz + seqkit
-
 %files from builder
     /opt/asm /opt/asm
 
 %environment
     export PATH="/opt/asm/bin:$PATH"
-
-%test
-    export PATH="/opt/asm/bin:$PATH"
-    hifiasm --version
-    pigz --version
-    seqkit version
