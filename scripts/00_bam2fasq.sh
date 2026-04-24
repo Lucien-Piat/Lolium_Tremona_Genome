@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --job-name=bam2fq
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=4
-#SBATCH --mem-per-cpu=1G
-#SBATCH --time=02:00:00
+#SBATCH --cpus-per-task=8
+#SBATCH --mem-per-cpu=384M
+#SBATCH --time=03:00:00
 #SBATCH --output=logs/00_bam2fq_%j.log
 
 set -euo pipefail
@@ -15,11 +15,9 @@ T=${SLURM_CPUS_PER_TASK}
 
 mkdir -p raw_reads logs
 
-# Half threads to samtools decode, half to pigz compress.
-# samtools fastq is I/O bound here, pigz is CPU bound.
 singularity exec "${SIF}" bash -c "
-    samtools fastq -@ $((T/2)) '${BAM}' \
-        | pigz -p $((T/2)) > '${OUT}'
+    samtools fastq -@ 1 '${BAM}' \
+        | pigz -p $((T-1)) > '${OUT}'
 "
 
 echo 'Read stats:'
