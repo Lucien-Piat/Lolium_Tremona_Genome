@@ -2,8 +2,8 @@
 #SBATCH --job-name=purge_dups
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=15
-#SBATCH --mem-per-cpu=3G
-#SBATCH --time=08:00:00
+#SBATCH --mem-per-cpu=2G
+#SBATCH --time=15:00:00
 #SBATCH --output=logs/04_purge_dups_%j.log
 
 set -euo pipefail
@@ -16,8 +16,10 @@ TRACKING="results/assembly_tracking.tsv"
 T=${SLURM_CPUS_PER_TASK:-4}
 ROOT=$(pwd)
 
-run() { singularity exec "${SIF}" "$@"; }
-run_sh() { singularity exec "${SIF}" bash -c "$@"; }
+BIND="/cluster/scratch"
+
+run()    { singularity exec --bind "${BIND}" "${SIF}" "$@"; }
+run_sh() { singularity exec --bind "${BIND}" "${SIF}" bash -c "$@"; }
 
 track() {
     local stage=$1 fa=$2
@@ -33,17 +35,20 @@ mkdir -p "${OUTDIR}" logs
 [[ -f "${TRACKING}" ]] || printf 'stage\tfile\tcontigs\tsize\n' > "${TRACKING}"
 
 run pigz -dcp 4 "${ASM_GZ}" > "${OUTDIR}/assembly.fa"
-ln -sf "${READS}" "${OUTDIR}/reads.fastq.gz"
 cd "${OUTDIR}"
 
-run_sh "minimap2 -t $((T-4)) -xmap-hifi assembly.fa reads.fastq.gz | pigz -p 4 > aligned.paf.gz"
+echo "Step 1: reads vs assembly (minimap2 map-hifi)"
+run_sh "minimap2 -t $((T-4)) -xmap-hifi assembly.fa ${READS} | pigz -p 4 > aligned.paf.gz"
 
+echo "Step 2: coverage stats and cutoffs"
 run pbcstat aligned.paf.gz
 run calcuts PB.stat > cutoffs
 
+echo "Step 3: self-alignment"
 run split_fa assembly.fa > asm.split.fa
 run_sh "minimap2 -t $((T-4)) -xasm5 -DP asm.split.fa asm.split.fa | pigz -p 4 > self_aln.paf.gz"
 
+echo "Step 4: purge"
 run purge_dups -2 -T cutoffs -c PB.base.cov assembly.fa > dups.bed
 run get_seqs -e dups.bed assembly.fa || true
 
@@ -57,7 +62,7 @@ else
 fi
 
 if run pigz -p "${T}" lmultiflorum.purged.fa lmultiflorum.haplotigs.fa; then
-    rm -f aligned.paf.gz self_aln.paf.gz asm.split.fa assembly.fa reads.fastq.gz \
+    rm -f aligned.paf.gz self_aln.paf.gz asm.split.fa assembly.fa \
           PB.stat PB.base.cov PB.cov2.bin PB.cov.wig cutoffs dups.bed
 else
     echo "ERROR: output compression failed, keeping intermediates for debug" >&2
