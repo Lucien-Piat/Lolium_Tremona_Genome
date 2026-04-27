@@ -12,10 +12,12 @@ SIF=$(readlink -f images/sif/hifiasm.sif)
 READS=$(readlink -f raw_reads/lmultiflorum_hifi.fastq.gz)
 OUTDIR="results/02_assembly"
 TRACKING="results/assembly_tracking.tsv"
-T=${SLURM_CPUS_PER_TASK:-4}
+T=${SLURM_CPUS_PER_TASK}
 ROOT=$(pwd)
 
-run() { singularity exec "${SIF}" "$@"; }
+BIND="/cluster/scratch"
+
+run() { singularity exec --bind "${BIND}" "${SIF}" "$@"; }
 
 track() {
     local stage=$1 fa=$2
@@ -30,11 +32,13 @@ track() {
 mkdir -p "${OUTDIR}" logs
 [[ -f "${TRACKING}" ]] || printf 'stage\tfile\tcontigs\tsize\n' > "${TRACKING}"
 
-ln -sf "${READS}" "${OUTDIR}/reads.fastq.gz"
 cd "${OUTDIR}"
 
 echo "Starting hifiasm at $(date)"
-run hifiasm -t "${T}" -o lmultiflorum --telo-m TTTAGGG reads.fastq.gz
+echo "Reads: ${READS}"
+
+run hifiasm -t "${T}" -o lmultiflorum --telo-m TTTAGGG "${READS}"
+
 echo "hifiasm finished at $(date)"
 
 for TYPE in bp.p_ctg bp.hap1.p_ctg bp.hap2.p_ctg; do
@@ -42,7 +46,7 @@ for TYPE in bp.p_ctg bp.hap1.p_ctg bp.hap2.p_ctg; do
         | run pigz -p "${T}" > "lmultiflorum.${TYPE}.fa.gz"
 done
 
-rm -f lmultiflorum*.bin reads.fastq.gz
+rm -f lmultiflorum*.bin
 run pigz -p "${T}" lmultiflorum*.gfa
 
 cd "${ROOT}"
