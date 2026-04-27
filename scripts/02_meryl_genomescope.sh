@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --job-name=meryl_gs2
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=16
-#SBATCH --mem-per-cpu=4G
-#SBATCH --time=04:00:00
+#SBATCH --cpus-per-task=10
+#SBATCH --mem-per-cpu=15G
+#SBATCH --time=4:00:00
 #SBATCH --output=logs/02_meryl_genomescope_%j.log
 
 set -euo pipefail
@@ -12,9 +12,9 @@ SIF="images/sif/qc_tools.sif"
 READS="raw_reads/lmultiflorum_hifi.fastq.gz"
 MERYL_DIR="results/01_qc/meryl"
 GS_DIR="results/01_qc/genomescope2"
-T=${SLURM_CPUS_PER_TASK:-4}
+T=${SLURM_CPUS_PER_TASK}
 KMER=21
-MERYL_MEM=64 
+MERYL_MEM=150 
 
 mkdir -p "${MERYL_DIR}" "${GS_DIR}" logs
 
