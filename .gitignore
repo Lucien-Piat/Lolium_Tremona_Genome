@@ -3,3 +3,5 @@ images/sif
 results
 raw_reads
 .DS_store
+*fa.gz
+quast_out/
