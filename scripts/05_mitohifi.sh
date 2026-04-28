@@ -15,6 +15,8 @@ TRACKING="results/assembly_tracking.tsv"
 T=${SLURM_CPUS_PER_TASK:-4}
 ROOT=$(pwd)
 
+BIND="/cluster/scratch"
+
 MITO_FA=$(readlink -f reference_data/lolium_perenne_mitochondrion.fasta)
 MITO_GB=$(readlink -f reference_data/lolium_perenne_mitochondrion.gb)
 CHLORO_FA=$(readlink -f reference_data/lolium_perenne_chloroplast.fasta)
@@ -25,6 +27,7 @@ mkdir -p "${CACHE}/home" "${CACHE}/matplotlib" "${CACHE}/fontconfig" "${OUTDIR}"
 
 run() {
     singularity exec \
+        --bind "${BIND}" \
         --env HOME="${CACHE}/home" \
         --env MPLCONFIGDIR="${CACHE}/matplotlib" \
         --env FONTCONFIG_PATH="${CACHE}/fontconfig" \
@@ -94,6 +97,7 @@ else
 fi
 
 rm -f assembly.fa mito.ids chloro.ids organellar_ids.txt
+
 for f in lmultiflorum_mito.fa lmultiflorum_chloro.fa lmultiflorum.nuclear.fa; do
     [[ -f "${f}" ]] && run pigz -p "${T}" "${f}"
 done

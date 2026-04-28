@@ -16,10 +16,13 @@ TRACKING="results/assembly_tracking.tsv"
 T=${SLURM_CPUS_PER_TASK:-4}
 ROOT=$(pwd)
 
-TAXDUMP="reference_data/ncbi_taxdump"
+TAXDUMP=$(readlink -f reference_data/ncbi_taxdump)
 BLASTDB_DIR="/cluster/project/clcgenomics/CLC_BLAST_DB"
 BLASTDB_NAME="nt"
 TAXID=4521
+
+# Bind both scratch (for project files) and the cluster project dir (for BLASTDB).
+BIND="/cluster/scratch,${BLASTDB_DIR}"
 
 CACHE="$(pwd)/.cache_blobtoolkit"
 mkdir -p "${CACHE}/home" "${CACHE}/matplotlib" "${CACHE}/fontconfig" \
@@ -27,7 +30,7 @@ mkdir -p "${CACHE}/home" "${CACHE}/matplotlib" "${CACHE}/fontconfig" \
 
 run() {
     singularity exec \
-        --bind "${BLASTDB_DIR}" \
+        --bind "${BIND}" \
         --env BLASTDB="${BLASTDB_DIR}" \
         --env HOME="${CACHE}/home" \
         --env MPLCONFIGDIR="${CACHE}/matplotlib" \
@@ -38,7 +41,7 @@ run() {
 
 run_sh() {
     singularity exec \
-        --bind "${BLASTDB_DIR}" \
+        --bind "${BIND}" \
         --env BLASTDB="${BLASTDB_DIR}" \
         --env HOME="${CACHE}/home" \
         --env MPLCONFIGDIR="${CACHE}/matplotlib" \
@@ -71,6 +74,7 @@ fi
 
 run pigz -dcp 4 "${ASM_GZ}" > "${OUTDIR}/assembly.fa"
 
+echo "Step 1: mapping HiFi reads with minimap2"
 run_sh "minimap2 -t $((T-4)) -ax map-hifi ${OUTDIR}/assembly.fa ${READS} \
          | samtools sort -@ 4 -m 2G -O BAM -o ${OUTDIR}/coverage.bam -"
 run samtools index -@ 4 "${OUTDIR}/coverage.bam"
