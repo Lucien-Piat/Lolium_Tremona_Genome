@@ -20,5 +20,4 @@ singularity exec "${SIF}" bash -c "
         | pigz -p $((T-1)) > '${OUT}'
 "
 
-echo 'Read stats:'
 singularity exec "${SIF}" seqkit stats -a -T "${OUT}"
