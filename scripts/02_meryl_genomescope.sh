@@ -13,22 +13,17 @@ READS="raw_reads/lmultiflorum_hifi.fastq.gz"
 MERYL_DIR="results/01_qc/meryl"
 GS_DIR="results/01_qc/genomescope2"
 T=${SLURM_CPUS_PER_TASK}
-KMER=21
-MERYL_MEM=150 
 
 mkdir -p "${MERYL_DIR}" "${GS_DIR}" logs
 
 singularity exec "${SIF}" \
-    meryl count k=${KMER} threads=${T} memory=${MERYL_MEM} \
-    "${READS}" output "${MERYL_DIR}/lmultiflorum.meryl"
+    meryl count k=21 threads=${T} memory=150 "${READS}" output "${MERYL_DIR}/lmultiflorum.meryl"
 
 singularity exec "${SIF}" \
-    meryl histogram "${MERYL_DIR}/lmultiflorum.meryl" \
-    > "${MERYL_DIR}/lmultiflorum.hist"
+    meryl histogram "${MERYL_DIR}/lmultiflorum.meryl" > "${MERYL_DIR}/lmultiflorum.hist"
 
 singularity exec "${SIF}" \
-    genomescope2 -i "${MERYL_DIR}/lmultiflorum.hist" \
-    -o "${GS_DIR}" -k ${KMER} -p 2 --name_prefix lmultiflorum
+    genomescope2 -i "${MERYL_DIR}/lmultiflorum.hist" -o "${GS_DIR}" -k 21 -p 2 --name_prefix lmultiflorum
 
 if tar cf - -C "${MERYL_DIR}" lmultiflorum.meryl \
      | singularity exec "${SIF}" pigz -p "${T}" \

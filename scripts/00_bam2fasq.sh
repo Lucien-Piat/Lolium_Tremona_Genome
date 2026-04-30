@@ -15,9 +15,4 @@ T=${SLURM_CPUS_PER_TASK}
 
 mkdir -p raw_reads logs
 
-singularity exec "${SIF}" bash -c "
-    samtools fastq -@ 1 '${BAM}' \
-        | pigz -p $((T-1)) > '${OUT}'
-"
-
-singularity exec "${SIF}" seqkit stats -a -T "${OUT}"
+singularity exec "${SIF}" bash -c "samtools fastq -@ 1 '${BAM}' | pigz -p $((T-1)) > '${OUT}'"
