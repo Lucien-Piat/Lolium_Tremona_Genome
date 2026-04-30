@@ -7,3 +7,6 @@ raw_reads
 quast_out/
 mb_downloads
 compleasm_results
+assemblies
+PhaseGrass
+logs
