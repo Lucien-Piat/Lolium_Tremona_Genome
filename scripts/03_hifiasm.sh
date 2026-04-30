@@ -37,9 +37,15 @@ cd "${OUTDIR}"
 echo "Starting hifiasm at $(date)"
 echo "Reads: ${READS}"
 
-run hifiasm -t "${T}" -o lmultiflorum --telo-m TTTAGGG "${READS}"
-
-echo "hifiasm finished at $(date)"
+run hifiasm \
+    -t "${T}" \
+    -o lmultiflorum \
+    --telo-m TTTAGGG \
+    --hg-size 2.2g \
+    --purge-max 80 \
+    -s 0.5 \
+    -O 3 \
+    "${READS}"
 
 for TYPE in bp.p_ctg bp.hap1.p_ctg bp.hap2.p_ctg; do
     awk '/^S/{print ">"$2; print $3}' "lmultiflorum.${TYPE}.gfa" \
@@ -53,5 +59,3 @@ cd "${ROOT}"
 track "assembly-raw" "${OUTDIR}/lmultiflorum.bp.p_ctg.fa.gz"
 track "hap1-raw"     "${OUTDIR}/lmultiflorum.bp.hap1.p_ctg.fa.gz"
 track "hap2-raw"     "${OUTDIR}/lmultiflorum.bp.hap2.p_ctg.fa.gz"
-
-echo "All done at $(date)"
