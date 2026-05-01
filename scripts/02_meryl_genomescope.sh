@@ -16,12 +16,15 @@ T=${SLURM_CPUS_PER_TASK}
 
 mkdir -p "${MERYL_DIR}" "${GS_DIR}" logs
 
+# Build 21mer db
 singularity exec "${SIF}" \
     meryl count k=21 threads=${T} memory=150 "${READS}" output "${MERYL_DIR}/lmultiflorum.meryl"
 
+# Build the histogram
 singularity exec "${SIF}" \
     meryl histogram "${MERYL_DIR}/lmultiflorum.meryl" > "${MERYL_DIR}/lmultiflorum.hist"
 
+# Apply the model
 singularity exec "${SIF}" \
     genomescope2 -i "${MERYL_DIR}/lmultiflorum.hist" -o "${GS_DIR}" -k 21 -p 2 --name_prefix lmultiflorum
 
