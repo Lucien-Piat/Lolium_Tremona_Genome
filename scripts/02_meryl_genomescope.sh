@@ -6,14 +6,13 @@
 #SBATCH --time=4:00:00
 #SBATCH --output=logs/02_meryl_genomescope_%j.log
 
+# Boilerplate
 set -euo pipefail
-
 SIF="images/sif/qc_tools.sif"
 READS="raw_reads/lmultiflorum_hifi.fastq.gz"
 MERYL_DIR="results/01_qc/meryl"
 GS_DIR="results/01_qc/genomescope2"
 T=${SLURM_CPUS_PER_TASK}
-
 mkdir -p "${MERYL_DIR}" "${GS_DIR}" logs
 
 # Build 21mer db

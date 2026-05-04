@@ -6,13 +6,13 @@
 #SBATCH --time=03:00:00
 #SBATCH --output=logs/00_bam2fq_%j.log
 
+# Boilerplate
 set -euo pipefail
-
 SIF="images/sif/qc_tools.sif"
 BAM="TREM1.hifi_reads.bam"
 OUT="raw_reads/lmultiflorum_hifi.fastq.gz"
 T=${SLURM_CPUS_PER_TASK}
-
 mkdir -p raw_reads logs
 
+# Conversion
 singularity exec "${SIF}" bash -c "samtools fastq -@ 1 '${BAM}' | pigz -p $((T-1)) > '${OUT}'"
