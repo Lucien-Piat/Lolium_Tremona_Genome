@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --job-name=pg_main
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=24
-#SBATCH --mem-per-cpu=4G
-#SBATCH --time=12:00:00
+#SBATCH --cpus-per-task=8
+#SBATCH --mem-per-cpu=12G
+#SBATCH --time=24:00:00
 #SBATCH --output=logs/04c_pg_04_purgegrass_%j.log
 
 set -euo pipefail
@@ -19,22 +19,19 @@ ROOT=$(pwd)
 BIND="/cluster/scratch"
 
 CACHE="$(pwd)/.cache_pg_main"
-mkdir -p "${CACHE}/home" "${CACHE}/matplotlib"
+mkdir -p "${CACHE}/matplotlib"
 
 run() {
     singularity exec --bind "${BIND}" \
-        --env HOME="${CACHE}/home" \
         --env MPLCONFIGDIR="${CACHE}/matplotlib" \
         --env XDG_CACHE_HOME="${CACHE}" \
         "${SIF}" "$@"
 }
 
-# Find the BUSCO full_table.tsv from step 3
-BUSCO_TABLE=$(find "${OUTDIR}/busco_out" -name 'full_table.tsv' | head -1)
+BUSCO_TABLE=$(find "${OUTDIR}/compleasm_out" -name 'full_table_busco_format.tsv' | head -1)
 [[ -n "${BUSCO_TABLE}" && -f "${BUSCO_TABLE}" ]] || \
-    { echo "ERROR: BUSCO full_table.tsv not found, did step 3 finish?" >&2; exit 1; }
+    { echo "ERROR: full_table_busco_format.tsv not found, did compleasm finish?" >&2; exit 1; }
 
-# Sanity check all required inputs
 ASM_FA="${OUTDIR}/assembly.fa"
 ASM_FAI="${OUTDIR}/assembly.fa.fai"
 PURGEHAP_LOG="${OUTDIR}/curated.contig_associations.log"
@@ -45,15 +42,6 @@ done
 
 cd "${OUTDIR}"
 
-echo "Running PurgeGrass.sh at $(date)"
-echo "Assembly:        ${ASM_FA}"
-echo "BUSCO table:     ${BUSCO_TABLE}"
-echo "FAI index:       ${ASM_FAI}"
-echo "Transcripts:     ${TRANSCRIPTS}"
-echo "MCScanX:         /opt/MCScanX"
-echo "PurgeHap log:    ${PURGEHAP_LOG}"
-echo "Scripts dir:     ${PURGEGRASS_DIR}/scripts"
-echo "Threads:         ${T}"
 
 run bash "${PURGEGRASS_DIR}/PurgeGrass.sh" \
     -a assembly.fa \
@@ -67,11 +55,28 @@ run bash "${PURGEGRASS_DIR}/PurgeGrass.sh" \
 
 echo "PurgeGrass.sh done at $(date)"
 
-# The wrapper writes final_primary_with_trim.fa as its end product.
-# Rename to project convention and compress.
 FINAL_RAW="final_primary_with_trim.fa"
 FINAL_OUT="lmultiflorum.purgegrass.fa"
 
 if [[ -s "${FINAL_RAW}" ]]; then
     mv "${FINAL_RAW}" "${FINAL_OUT}"
-    [[ -f "${FI
+    [[ -f "${FINAL_RAW}.stats" ]] && mv "${FINAL_RAW}.stats" "${FINAL_OUT}.stats"
+    run pigz -p "${T}" "${FINAL_OUT}"
+    echo "Final purged assembly: ${OUTDIR}/${FINAL_OUT}.gz"
+else
+    echo "ERROR: expected ${FINAL_RAW} not found" >&2
+    echo "Contents of ${OUTDIR}:"
+    ls -lh
+    exit 1
+fi
+
+cd "${ROOT}"
+[[ -f "${TRACKING}" ]] || printf 'stage\tfile\tcontigs\tsize\n' > "${TRACKING}"
+stats=$(run seqkit stats -T "${OUTDIR}/${FINAL_OUT}.gz" | tail -1)
+nseq=$(echo "${stats}" | cut -f4)
+size=$(echo "${stats}" | cut -f5)
+printf 'assembly-purgegrass\t%s\t%s\t%s\n' \
+    "$(readlink -f "${OUTDIR}/${FINAL_OUT}.gz")" "${nseq}" "${size}" >> "${TRACKING}"
+echo "assembly-purgegrass: ${nseq} contigs, ${size} bp"
+
+rm -rf "${CACHE}"
