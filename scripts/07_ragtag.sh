@@ -1,9 +1,9 @@
 #!/bin/bash
 #SBATCH --job-name=ragtag
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=8
-#SBATCH --mem-per-cpu=4G
-#SBATCH --time=05:00:00
+#SBATCH --cpus-per-task=4
+#SBATCH --mem-per-cpu=20G
+#SBATCH --time=08:00:00
 #SBATCH --output=logs/04d_ragtag_%x_%j.log
 
 # Usage: sbatch scripts/04d_ragtag.sh <assembly.fa.gz> <label>
