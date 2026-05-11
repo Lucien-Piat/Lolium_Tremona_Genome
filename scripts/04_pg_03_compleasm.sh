@@ -1,9 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-ASM="lmultiflorum.hap1.scaffolded.placed.fa"
-OUT="compleasm"
-THREADS=4
+ASM="./results/04c_purgegrass/assembly.fa"
+OUT="./results/04c_purgegrass/compleasm_results/"
+THREADS=8
 
 mkdir -p "$OUT"
 
