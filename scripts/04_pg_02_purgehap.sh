@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=pg_purgehap
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=6
-#SBATCH --mem-per-cpu=16G
+#SBATCH --cpus-per-task=2
+#SBATCH --mem-per-cpu=90G
 #SBATCH --time=12:00:00
 #SBATCH --output=logs/04c_pg_02_purgehap_%j.log
 
@@ -60,14 +60,9 @@ else
 fi
 
 echo "Step 4: purge_haplotigs purge at $(date)"
-run purge_haplotigs purge -t "${T}" -g assembly.fa -c coverage_stats.csv -a 70 -I 2G
+run purge_haplotigs purge -t "${T}" -g assembly.fa -c coverage_stats.csv -a 70 -I 1G
 
-echo "purge_haplotigs done at $(date)"
-echo "Key output: curated.contig_associations.log"
 ls -lh curated*
-
-echo "Cleaning up large intermediates..."
 rm -rf tmp_purge_haplotigs
 rm -f aligned.bam aligned.bam.bai aligned.bam*gencov
-
 rm -rf "${CACHE}"
