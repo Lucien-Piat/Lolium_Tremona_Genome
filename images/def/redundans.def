@@ -1,9 +1,0 @@
-Bootstrap: docker
-From: cgenomics/redundans:2.0
-
-%environment
-    export PATH=/root/src/redundans:/usr/local/bin:/usr/bin:/bin:$PATH
-    export LC_ALL=C
-
-%runscript
-    exec /root/src/redundans/redundans.py "$@"
