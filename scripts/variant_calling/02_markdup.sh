@@ -1,16 +1,16 @@
 #!/bin/bash
 #SBATCH --job-name=markdup
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=12
-#SBATCH --mem-per-cpu=2500M
-#SBATCH --time=6:00:00
+#SBATCH --cpus-per-task=4
+#SBATCH --mem-per-cpu=3G
+#SBATCH --time=2:00:00
 #SBATCH --output=logs/02_markdup_%j.log
 
 set -euo pipefail
 
 SIF=$(readlink -f images/sif/varcall.sif)
 INDIR=$(readlink -f results/01_aligned)
-OUTDIR="results/02_markdup"
+OUTDIR=$(readlink -f results/02_markdup)
 SAMPLE=${1:?usage: sbatch 02_markdup.sh <sample_name>}
 T=${SLURM_CPUS_PER_TASK}
 BIND="/cluster/scratch"
@@ -18,12 +18,16 @@ BIND="/cluster/scratch"
 run() { singularity exec --bind "${BIND}" "${SIF}" "$@"; }
 
 mkdir -p "${OUTDIR}" logs
+
+# Absolute paths so cleanup works regardless of cwd
 TMP="${OUTDIR}/tmp_${SAMPLE}"
 mkdir -p "${TMP}"
 
 SORTED="${INDIR}/${SAMPLE}.sorted.bam"
+DEDUP="${OUTDIR}/${SAMPLE}.dedup.bam"
+FLAGSTAT="${OUTDIR}/${SAMPLE}.dedup.flagstat.txt"
 
-cd "${OUTDIR}"
+[[ -s "${SORTED}" ]] || { echo "ERROR: missing input ${SORTED}" >&2; exit 1; }
 
 # Mark duplicates
 run sambamba markdup \
@@ -34,17 +38,16 @@ run sambamba markdup \
     --sort-buffer-size=16384 \
     --io-buffer-size=512 \
     "${SORTED}" \
-    "${SAMPLE}.dedup.bam"
+    "${DEDUP}"
 
-run samtools flagstat -@ "${T}" "${SAMPLE}.dedup.bam" > "${SAMPLE}.dedup.flagstat.txt"
+run samtools flagstat -@ "${T}" "${DEDUP}" > "${FLAGSTAT}"
 
-# Verify dedup BAM is sane before cleaning up
-if [[ ! -s "${SAMPLE}.dedup.bam" ]] || [[ ! -s "${SAMPLE}.dedup.bam.bai" ]]; then
+if [[ ! -s "${DEDUP}" ]] || [[ ! -s "${DEDUP}.bai" ]]; then
     echo "ERROR: dedup output incomplete, keeping inputs" >&2
     exit 1
 fi
 
-ALIGNED=$(grep "in total" "${SAMPLE}.dedup.flagstat.txt" | head -1 | awk '{print $1}')
+ALIGNED=$(grep "in total" "${FLAGSTAT}" | head -1 | awk '{print $1}')
 if [[ -z "${ALIGNED}" ]] || [[ "${ALIGNED}" -le 0 ]]; then
     echo "ERROR: dedup BAM has no aligned reads, keeping inputs" >&2
     exit 1
