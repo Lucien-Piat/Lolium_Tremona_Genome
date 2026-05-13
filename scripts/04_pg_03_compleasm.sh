@@ -1,4 +1,5 @@
 #!/bin/bash
+# Run compleasm locally
 set -euo pipefail
 
 ASM="./results/04c_purgegrass/assembly.fa"
