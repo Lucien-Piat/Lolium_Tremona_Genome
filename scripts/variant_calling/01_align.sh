@@ -2,8 +2,8 @@
 #SBATCH --job-name=mm2_align
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
-#SBATCH --mem-per-cpu=1500M
-#SBATCH --time=12:00:00
+#SBATCH --mem-per-cpu=1250M
+#SBATCH --time=08:00:00
 #SBATCH --output=logs/01_align_%j.log
 
 set -euo pipefail
