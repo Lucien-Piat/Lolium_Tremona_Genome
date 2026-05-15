@@ -12,3 +12,4 @@ PhaseGrass
 logs
 04c_*
 reads/*
+.cache*
