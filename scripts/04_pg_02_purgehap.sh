@@ -20,6 +20,7 @@ run_sh() { singularity exec --bind "${BIND}" "${SIF}" bash -c "$@";}
 
 cd "${OUTDIR}"
 
+# Align reads on the assembly
 if [[ ! -f "aligned.bam" ]]; then
     run_sh "minimap2 -t $((T-2)) -I 5G -K 5G -ax map-hifi --secondary=no \
               assembly.fa ${READS} \
@@ -27,12 +28,14 @@ if [[ ! -f "aligned.bam" ]]; then
     run samtools index -@ 4 aligned.bam
 fi
 
+# Compute histogram
 GENCOV=$(ls aligned.bam*gencov 2>/dev/null | head -1 || true)
 if [[ -z "${GENCOV}" ]]; then
     run purge_haplotigs hist -b aligned.bam -g assembly.fa -t "${T}"
     GENCOV=$(ls aligned.bam*gencov 2>/dev/null | head -1)
 fi
 
+# Purge
 if [[ ! -f coverage_stats.csv ]]; then
     run purge_haplotigs cov -i "${GENCOV}" -l 5 -m 40 -h 100 -j 101 -s 80
 fi

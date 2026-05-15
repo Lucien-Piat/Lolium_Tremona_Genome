@@ -1,8 +1,8 @@
 #!/bin/bash
 # Run PurgeGrass.sh locally
 
+# Boilerplate
 set -uo pipefail
-
 ROOT=$(pwd)
 OUTDIR="${ROOT}/results/04c_purgegrass"
 SIF="${ROOT}/images/sif/purgegrass.sif"
@@ -13,6 +13,7 @@ BUSCO_TABLE="full_table_busco_format.tsv"
 
 cd "${OUTDIR}"
 
+# Run purgegrass
 singularity exec --bind "${ROOT}":"${ROOT}" "${SIF}" \
     bash "${PURGEGRASS_DIR}/PurgeGrass.sh" \
     -a "${OUTDIR}/assembly.fa" \
