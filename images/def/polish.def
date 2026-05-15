@@ -2,7 +2,6 @@ Bootstrap: docker
 From: condaforge/mambaforge:latest
 
 %post
-    # Install everything in one go to ensure dependency resolution
     mamba create -n mito_env -y -c bioconda -c conda-forge \
         python=3.9 \
         purge_dups \
@@ -16,9 +15,11 @@ From: condaforge/mambaforge:latest
         blast \
         cd-hit \
         dna_features_viewer \
-        bcbio-gff
-
-    mamba clean -a -y
+        bcbio-gff \
+        trnascan-se \
+        infernal \
+        aragorn \
+        hmmer
 
     git clone https://github.com/marcelauliano/MitoHiFi.git /opt/MitoHiFi
     
