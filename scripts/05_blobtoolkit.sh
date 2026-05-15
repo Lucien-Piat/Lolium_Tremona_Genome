@@ -6,123 +6,89 @@
 #SBATCH --time=36:00:00
 #SBATCH --output=logs/05_blobtoolkit_%j.log
 
+# Boilerplate
 set -euo pipefail
-
 SIF=$(readlink -f images/sif/blobtoolkit.sif)
 READS=$(readlink -f raw_reads/lmultiflorum_hifi.fastq.gz)
-ASM_GZ=$(readlink -f results/04c_purgegrass/lmultiflorum.purgegrass.fa.gz)
-OUTDIR="results/05_blobtoolkit_purged"
-T=${SLURM_CPUS_PER_TASK:-4}
-
+ASM=$(readlink -f results/04c_purgegrass/final_primary_with_trim.fa)
 TAXDUMP=$(readlink -f reference_data/ncbi_taxdump)
+
+OUTDIR="results/05_blobtoolkit_purged"
+FINAL_BASENAME="lmultiflorum.purgegrass.decontam.fa"
 BLASTDB_DIR="/cluster/project/clcgenomics/CLC_BLAST_DB"
-BLASTDB_NAME="nt"
 TAXID=4521
 
+T=${SLURM_CPUS_PER_TASK:-4}
 BIND="/cluster/scratch,${BLASTDB_DIR}"
+CACHE="$(pwd)/.cache_btk"
 
-CACHE="$(pwd)/.cache_btk_purged"
-mkdir -p "${CACHE}/home" "${CACHE}/matplotlib" "${CACHE}/fontconfig" "${OUTDIR}" logs
+mkdir -p "${CACHE}" "${OUTDIR}" logs
 
-run() {
-    singularity exec \
-        --bind "${BIND}" \
-        --env BLASTDB="${BLASTDB_DIR}" \
-        --env MPLCONFIGDIR="${CACHE}/matplotlib" \
-        --env FONTCONFIG_PATH="${CACHE}/fontconfig" \
-        --env XDG_CACHE_HOME="${CACHE}" \
-        "${SIF}" "$@"
-}
+# Setup singularity environment natively
+export SINGULARITYENV_BLASTDB="${BLASTDB_DIR}"
+export SINGULARITYENV_MPLCONFIGDIR="${CACHE}"
+export SINGULARITYENV_FONTCONFIG_PATH="${CACHE}"
+export SINGULARITYENV_XDG_CACHE_HOME="${CACHE}"
 
-run_sh() {
-    singularity exec \
-        --bind "${BIND}" \
-        --env BLASTDB="${BLASTDB_DIR}" \
-        --env MPLCONFIGDIR="${CACHE}/matplotlib" \
-        --env FONTCONFIG_PATH="${CACHE}/fontconfig" \
-        --env XDG_CACHE_HOME="${CACHE}" \
-        "${SIF}" bash -c "$@"
-}
+run() { singularity exec --bind "${BIND}" "${SIF}" "$@"; }
+run_sh() { singularity exec --bind "${BIND}" "${SIF}" bash -c "$@"; }
 
-[[ -f "${TAXDUMP}/nodes.dmp" ]] || \
-    { echo "ERROR: taxdump missing at ${TAXDUMP}" >&2; exit 1; }
+# Minimal safety checks
+for f in "${SIF}" "${READS}" "${ASM}"; do
+    [[ -s "$f" ]] || { echo "ERROR: Missing $f" >&2; exit 1; }
+done
 
-echo "==================================================="
-echo "BlobToolKit on purged assembly"
-echo "Started: $(date)"
-echo "Resources: ${T} cpus, $((T*4)) GB RAM"
-echo "==================================================="
+# Stage assembly
+ASM_LOCAL="${OUTDIR}/assembly.fa"
+ln -sf "${ASM}" "${ASM_LOCAL}"
+[[ -s "${ASM_LOCAL}.fai" ]] || run samtools faidx "${ASM_LOCAL}"
 
-# Decompress assembly
-run pigz -dcp "${T}" "${ASM_GZ}" > "${OUTDIR}/assembly.fa"
+# Step 1: Mapping (resume if BAM index exists)
+COVBAM="${OUTDIR}/coverage.bam"
+[[ -s "${COVBAM}" ]] && [[ ! -s "${COVBAM}.bai" ]] && rm -f "${COVBAM}" # clean stale bam
 
-# Step 1: map HiFi reads to assembly
-# -I 2G keeps memory predictable within cgroup limits
-echo "Step 1: minimap2 mapping at $(date)"
-run_sh "minimap2 -t $((T-2)) -I 2G -K 5G -ax map-hifi --secondary=no \
-          ${OUTDIR}/assembly.fa ${READS} \
-        | samtools sort -@ 2 -m 2G -O BAM -o ${OUTDIR}/coverage.bam -"
-run samtools index -@ "${T}" "${OUTDIR}/coverage.bam"
+if [[ ! -s "${COVBAM}.bai" ]]; then
+    run_sh "minimap2 -t $((T-2)) -I 4G -K 5G -ax map-hifi --secondary=no ${ASM_LOCAL} ${READS} \
+            | samtools sort -@ 2 -m 2G -O BAM -o ${COVBAM} -"
+    run samtools index -@ "${T}" "${COVBAM}"
+fi
 
-# Step 2: blastn against nt (this is the long step, hours)
-echo "Step 2: blastn at $(date)"
-run blastn \
-    -db "${BLASTDB_DIR}/${BLASTDB_NAME}" \
-    -query "${OUTDIR}/assembly.fa" \
-    -outfmt "6 qseqid staxids bitscore std" \
-    -max_target_seqs 10 \
-    -max_hsps 1 \
-    -evalue 1e-25 \
-    -num_threads "${T}" \
-    -out "${OUTDIR}/blast.out"
+# Step 2: BLAST (resume if output exists)
+BLASTOUT="${OUTDIR}/blast.out"
+if [[ ! -s "${BLASTOUT}" ]]; then
+    run blastn -db nt -query "${ASM_LOCAL}" -outfmt "6 qseqid staxids bitscore std" \
+        -max_target_seqs 10 -max_hsps 1 -evalue 1e-25 -num_threads "${T}" -out "${BLASTOUT}"
+fi
 
-# Step 3: build BlobDir
-echo "Step 3: building BlobDir at $(date)"
-run blobtools create \
-    --fasta "${OUTDIR}/assembly.fa" \
-    --taxid "${TAXID}" \
-    --taxdump "${TAXDUMP}" \
-    "${OUTDIR}/blobdir"
+# Step 3: Build BlobDir (resume if meta.json exists)
+BLOBDIR="${OUTDIR}/blobdir"
+if [[ ! -f "${BLOBDIR}/meta.json" ]]; then
+    run blobtools create --fasta "${ASM_LOCAL}" --taxid "${TAXID}" --taxdump "${TAXDUMP}" "${BLOBDIR}"
+    run blobtools add --cov "${COVBAM}" "${BLOBDIR}"
+    run blobtools add --hits "${BLASTOUT}" --taxrule bestsumorder --taxdump "${TAXDUMP}" "${BLOBDIR}"
+fi
 
-run blobtools add \
-    --cov "${OUTDIR}/coverage.bam" \
-    "${OUTDIR}/blobdir"
-
-run blobtools add \
-    --hits "${OUTDIR}/blast.out" \
-    --taxrule bestsumorder \
-    --taxdump "${TAXDUMP}" \
-    "${OUTDIR}/blobdir"
-
-# Step 4: filter to keep Streptophyta and no-hit contigs
-echo "Step 4: filtering at $(date)"
+# Step 4: Filter (Streptophyta + no-hit)
+rm -rf "${OUTDIR}/filtered"
 run blobtools filter \
     --param bestsumorder_phylum--Keys=Streptophyta \
     --param bestsumorder_phylum--Keys=no-hit \
-    --fasta "${OUTDIR}/assembly.fa" \
+    --fasta "${ASM_LOCAL}" \
     --output "${OUTDIR}/filtered" \
-    "${OUTDIR}/blobdir"
+    "${BLOBDIR}"
 
-FILTERED="${OUTDIR}/filtered/assembly.filtered.fa"
-if [[ -f "${FILTERED}" ]]; then
-    mv "${FILTERED}" "${OUTDIR}/lmultiflorum.purged.decontam.fa"
-    echo "INFO: filtered assembly produced"
+# Finalize and compress
+FINAL="${OUTDIR}/${FINAL_BASENAME}"
+FILTERED=$(find "${OUTDIR}/filtered" \( -name "*.filtered.fasta" -o -name "*.filtered.fa" \) 2>/dev/null | head -n 1)
+
+if [[ -n "${FILTERED}" ]] && [[ -s "${FILTERED}" ]]; then
+    mv "${FILTERED}" "${FINAL}"
 else
-    echo "WARN: no filtered output, keeping assembly as-is"
-    cp "${OUTDIR}/assembly.fa" "${OUTDIR}/lmultiflorum.purged.decontam.fa"
+    cp "${ASM_LOCAL}" "${FINAL}"
 fi
 
-# Compress and clean up heavy intermediates
-run pigz -p "${T}" "${OUTDIR}/lmultiflorum.purged.decontam.fa"
+run pigz -f -p "${T}" "${FINAL}"
 
-rm -f "${OUTDIR}/assembly.fa" \
-      "${OUTDIR}/coverage.bam" "${OUTDIR}/coverage.bam.bai" \
-      "${OUTDIR}/blast.out"
+# Cleanup
+rm -f "${ASM_LOCAL}" "${ASM_LOCAL}.fai" "${COVBAM}" "${COVBAM}.bai" "${BLASTOUT}"
 rm -rf "${OUTDIR}/filtered" "${CACHE}"
-
-echo ""
-echo "==================================================="
-echo "BlobToolKit done at $(date)"
-echo "==================================================="
-echo "Filtered assembly: ${OUTDIR}/lmultiflorum.purged.decontam.fa.gz"
-echo "BlobDir for plots: ${OUTDIR}/blobdir/"

@@ -10,46 +10,40 @@
 
 set -euo pipefail
 
+# Argument check
+[[ $# -eq 2 ]] || { echo "Usage: sbatch $0 <assembly.fa.gz> <label>" >&2; exit 1; }
+
 ASM_GZ=$(readlink -f "$1")
 LABEL="$2"
-
 SIF=$(readlink -f images/sif/evaluation.sif)
 REF_GZ=$(readlink -f reference_data/ciao_unp.fasta.gz)
 OUTDIR="results/04d_ragtag/${LABEL}"
-T=${SLURM_CPUS_PER_TASK:-4}
-
-BIND="/cluster/scratch"
-
-run() { singularity exec --bind "${BIND}" "${SIF}" "$@"; }
-
-mkdir -p "${OUTDIR}" logs
-
-echo "Label:      ${LABEL}"
-echo "Assembly:   ${ASM_GZ}"
-echo "Reference:  ${REF_GZ}"
-echo "Threads:    ${T}"
-echo "Started:    $(date)"
-
-run pigz -dcp "${T}" "${REF_GZ}" > "${OUTDIR}/ref.fa"
-run pigz -dcp "${T}" "${ASM_GZ}" > "${OUTDIR}/query.fa"
-
-run ragtag.py scaffold \
-    "${OUTDIR}/ref.fa" \
-    "${OUTDIR}/query.fa" \
-    -o "${OUTDIR}/ragtag_out" \
-    -t "${T}" \
-    -u \
-    -r \
-    --aligner minimap2
-
-SCAFFOLD="${OUTDIR}/ragtag_out/ragtag.scaffold.fasta"
-[[ -f "${SCAFFOLD}" ]] || { echo "ERROR: no RagTag output" >&2; exit 0; }
-
 FINAL="${OUTDIR}/lmultiflorum.${LABEL}.scaffolded.fa"
+T=${SLURM_CPUS_PER_TASK:-4}
+BIND="/cluster/scratch"
+mkdir -p "${OUTDIR}" logs
+for f in "${SIF}" "${ASM_GZ}" "${REF_GZ}"; do
+    [[ -s "$f" ]] || { echo "ERROR: Missing $f" >&2; exit 1; }
+done
+run() { singularity exec --bind "${BIND}" "${SIF}" "$@"; }
+[[ -s "${OUTDIR}/ref.fa" ]] || run pigz -dcp "${T}" "${REF_GZ}" > "${OUTDIR}/ref.fa"
+[[ -s "${OUTDIR}/query.fa" ]] || run pigz -dcp "${T}" "${ASM_GZ}" > "${OUTDIR}/query.fa"
+
+# Run RagTag
+SCAFFOLD="${OUTDIR}/ragtag_out/ragtag.scaffold.fasta"
+if [[ ! -s "${SCAFFOLD}" ]]; then
+    run ragtag.py scaffold \
+        "${OUTDIR}/ref.fa" \
+        "${OUTDIR}/query.fa" \
+        -o "${OUTDIR}/ragtag_out" \
+        -t "${T}" -u -r --aligner minimap2
+fi
+
+[[ -s "${SCAFFOLD}" ]] || { echo "ERROR: RagTag failed to produce ${SCAFFOLD}" >&2; exit 1; }
+
+# Finalize and compress
 mv "${SCAFFOLD}" "${FINAL}"
 run pigz -p "${T}" "${FINAL}"
 
+# Cleanup intermediate fasta files
 rm -f "${OUTDIR}/ref.fa" "${OUTDIR}/query.fa"
-
-echo "Done at $(date)"
-echo "Output: ${FINAL}.gz"
