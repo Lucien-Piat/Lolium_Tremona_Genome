@@ -1,0 +1,11 @@
+Bootstrap: docker
+From: condaforge/mambaforge:latest
+
+%post
+    mamba install -n base -y -c bioconda -c conda-forge \
+        oatk \
+        hmmer \
+        wget
+
+%environment
+    export PATH="/opt/conda/bin:$PATH"

@@ -10,7 +10,7 @@
 set -euo pipefail
 SIF=$(readlink -f images/sif/purgegrass.sif)
 READS=$(readlink -f raw_reads/lmultiflorum_hifi.fastq.gz)
-OUTDIR="results/04c_purgegrass"
+OUTDIR="results/04_purgegrass"
 T=${SLURM_CPUS_PER_TASK:-4}
 BIND="/cluster/scratch"
 CACHE="$(pwd)/.cache_purgegrass"

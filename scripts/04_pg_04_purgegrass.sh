@@ -4,7 +4,7 @@
 # Boilerplate
 set -uo pipefail
 ROOT=$(pwd)
-OUTDIR="${ROOT}/results/04c_purgegrass"
+OUTDIR="${ROOT}/results/04_purgegrass"
 SIF="${ROOT}/images/sif/purgegrass.sif"
 PURGEGRASS_DIR="${ROOT}/PhaseGrass/PurgeGrass"
 TRANSCRIPTS="${ROOT}/reference_data/transcripts/lolmu_transcripts.fa"

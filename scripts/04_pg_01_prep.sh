@@ -9,10 +9,10 @@
 # Boilerplate
 set -euo pipefail
 SIF=$(readlink -f images/sif/purgegrass.sif)
-ASM_GZ=$(readlink -f results/02_assembly/S_lmultiflorum.bp.p_ctg.fa.gz)
+ASM_GZ=$(readlink -f results/03_assembly/S_lmultiflorum.bp.p_ctg.fa.gz)
 REF_FA=$(readlink -f reference_data/full_ref_genome/LOLMU.fa)
 REF_GFF=$(readlink -f reference_data/full_ref_genome/LOLMU.gff)
-OUTDIR="results/04c_purgegrass"
+OUTDIR="results/04_purgegrass"
 T=${SLURM_CPUS_PER_TASK:-4}
 BIND="/cluster/scratch"
 run() { singularity exec --bind "${BIND}" "${SIF}" "$@"; }
