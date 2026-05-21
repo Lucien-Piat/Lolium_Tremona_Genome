@@ -2,8 +2,8 @@
 #SBATCH --job-name=hapcaller
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
-#SBATCH --mem-per-cpu=3G
-#SBATCH --time=30:00:00
+#SBATCH --mem-per-cpu=2G
+#SBATCH --time=40:00:00
 #SBATCH --output=logs/03_hapcaller_%j.log
 
 set -euo pipefail
@@ -34,12 +34,10 @@ if [[ ! -s "${REF}" ]]; then
     rm -f "${REF}.lock"
 fi
 
-# Index
 [[ -s "${REF}.fai" ]] || run samtools faidx "${REF}"
 DICT="${REF%.fa}.dict"
 [[ -s "${DICT}" ]] || run gatk CreateSequenceDictionary -R "${REF}" -O "${DICT}"
 
-# Check for rerun
 BAM="${INDIR}/${SAMPLE}.dedup.bam"
 GVCF="${OUTDIR}/${SAMPLE}.g.vcf.gz"
 [[ -s "${BAM}" ]] || { echo "ERROR: missing ${BAM}" >&2; exit 1; }
@@ -48,24 +46,6 @@ if [[ -s "${GVCF}" ]] && [[ -s "${GVCF}.tbi" ]]; then
     exit 0
 fi
 
-# Only keep the ragtag contigs
-INTERVAL_FLAGS=""
-N_CONTIGS=0
-while read -r chrom; do
-    INTERVAL_FLAGS="${INTERVAL_FLAGS} -L ${chrom}"
-    N_CONTIGS=$((N_CONTIGS+1))
-done < <(awk '$1 ~ /^chr.*_RagTag$/ {print $1}' "${REF}.fai")
-
-if [[ "${N_CONTIGS}" -eq 0 ]]; then
-    echo "ERROR: no contigs matching ^chr.*_RagTag in ${REF}.fai" >&2
-    echo "First 10 contigs:" >&2
-    head -10 "${REF}.fai" | cut -f1 >&2
-    exit 1
-fi
-echo "Calling on ${N_CONTIGS} chr*_RagTag scaffolds"
-
-
-# HaplotypeCaller
 # 12G cgroup, -Xmx8G leaves ~4G for JVM off-heap and native pair-HMM.
 echo "HaplotypeCaller for ${SAMPLE} at $(date)"
 run gatk --java-options "-Xmx8G" HaplotypeCaller \
@@ -73,8 +53,7 @@ run gatk --java-options "-Xmx8G" HaplotypeCaller \
     -I "${BAM}" \
     -O "${GVCF}" \
     -ERC GVCF \
-    --native-pair-hmm-threads "${T}" \
-    ${INTERVAL_FLAGS}
+    --native-pair-hmm-threads "${T}"
 
 [[ -s "${GVCF}" && -s "${GVCF}.tbi" ]] || \
     { echo "ERROR: gVCF output incomplete, keeping dedup.bam" >&2; exit 1; }
