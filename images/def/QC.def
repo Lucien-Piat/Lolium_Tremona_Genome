@@ -1,0 +1,34 @@
+Bootstrap: docker
+From: condaforge/miniforge3:latest
+
+%post
+    set -eux
+
+    mamba create -y -n qc \
+        -c bioconda -c conda-forge \
+        python=3.11 \
+        merqury \
+        meryl \
+        seqkit \
+        samtools \
+        bedtools \
+        liftoff \
+        gffread \
+        minimap2 \
+        syri \
+        plotsr \
+        biopython \
+        'pandas<2' \
+        matplotlib \
+        pysam
+
+    mamba clean --all --yes
+
+%environment
+    export PATH=/opt/conda/envs/qc/bin:$PATH
+    export MERQURY=/opt/conda/envs/qc/share/merqury
+    export LC_ALL=C.UTF-8
+    export LANG=C.UTF-8
+
+%runscript
+    exec "$@"
