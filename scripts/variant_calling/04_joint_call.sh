@@ -12,8 +12,9 @@ SIF=$(readlink -f images/sif/varcall.sif)
 YAML=$(readlink -f reads/samples.yaml)
 INDIR=$(readlink -f results/03_gvcf)
 OUTDIR="results/04_joint_calling"
-run()    { singularity exec --bind "$PWD" "${SIF}" "$@"; }
-run_sh() { singularity exec --bind "$PWD" "${SIF}" bash -c "$@"; }
+BIND=$PWD
+run()    { singularity exec --bind "${BIND}" "${SIF}" "$@"; }
+run_sh() { singularity exec --bind "${BIND}" "${SIF}" bash -c "$@"; }
 mkdir -p "${OUTDIR}" logs
 REF=$(readlink -f "$(run yq -r '.reference_genome' "${YAML}")")
 REF="${REF%.gz}"
