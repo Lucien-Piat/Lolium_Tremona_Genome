@@ -17,19 +17,19 @@ mkdir -p "${OUTDIR}"
 cd "${OUTDIR}"
 
 # Brunharo
-#echo "[$(date)] Liftoff pass 1: Brunharo"
-#run liftoff \
-#    -g "${BRUN_GFF}" \
-#    -o tremona.brunharo.gff \
-#    -u tremona.brunharo.unmapped.txt \
-#    -dir liftoff_brunharo_tmp \
-#    -p "${T}" \
-#    -copies \
-#    -polish \
-#    -mm2_options="-a --end-bonus 5 --eqx -N 50 -p 0.5 -I 4G" \
-#    "${TARGET}" "${BRUN_FA}"
-#mv tremona.brunharo.gff_polished tremona.brunharo.gff
-#rm -rf liftoff_brunharo_tmp
+echo "[$(date)] Liftoff pass 1: Brunharo"
+run liftoff \
+    -g "${BRUN_GFF}" \
+    -o tremona.brunharo.gff \
+    -u tremona.brunharo.unmapped.txt \
+    -dir liftoff_brunharo_tmp \
+    -p "${T}" \
+    -copies \
+    -polish \
+    -mm2_options="-a --end-bonus 5 --eqx -N 50 -p 0.5 -I 4G" \
+    "${TARGET}" "${BRUN_FA}"
+mv tremona.brunharo.gff_polished tremona.brunharo.gff
+rm -rf liftoff_brunharo_tmp
 
 # Kyuss v2
 echo "[$(date)] Liftoff pass 2: Kyuss v2"
