@@ -27,6 +27,7 @@ def organelle_lengths(*fasta_paths):
 
 def find_gaps(fasta_path, min_gap=1000):
     """Find runs of N of at least min_gap bp. Returns [(chrom, start, end), ...]."""
+    print("Finding gaps")
     gaps = []
     for rec in SeqIO.parse(fasta_path, "fasta"):
         seq = str(rec.seq).upper()
@@ -48,6 +49,7 @@ def find_gaps(fasta_path, min_gap=1000):
 
 def gc_windows(fasta_path, window=1_000_000):
     """Return [(chrom, start, end, gc_pct), ...]. Ns excluded from denominator."""
+    print("Computing G/C")
     out = []
     for rec in SeqIO.parse(fasta_path, "fasta"):
         seq = str(rec.seq).upper()
@@ -66,6 +68,7 @@ def gc_windows(fasta_path, window=1_000_000):
 
 def gene_density(gff_path, chrom_lengths, window=1_000_000):
     """Return [(chrom, start, end, n_genes), ...]."""
+    print("Computing gene density")
     starts = defaultdict(list)
     with open(gff_path) as fh:
         for line in fh:
@@ -89,6 +92,7 @@ def gene_density(gff_path, chrom_lengths, window=1_000_000):
 
 def busco_orthologs(table_path):
     """Parse BUSCO full table. Returns [(chrom, midpoint, status), ...] excluding Missing."""
+    print("Computing busco list")
     out = []
     with open(table_path) as fh:
         for line in fh:
@@ -116,6 +120,7 @@ def organelle_features(gb_path, types=("CDS", "tRNA", "rRNA")):
 
     Returns [(chrom_id, name, start, end, strand, ftype), ...].
     """
+    print("Computing organellear features")
     import re
 
     out = []
@@ -191,6 +196,7 @@ def _parse_loc(loc_str):
 # Links
 
 def load_self_synteny(path):
+    print("Loading chr syntheny")
     out = []
     with open(path) as fh:
         next(fh)  # header
@@ -208,6 +214,7 @@ def load_self_synteny(path):
 
 
 def load_organelle_links(path):
+    print("Loading organellar syntheny")
     out = []
     with open(path) as fh:
         for line in fh:
@@ -224,6 +231,7 @@ def load_organelle_links(path):
 def organelle_gc(fasta_path, offsets, scale, window=2000):
     """GC content for organelle contigs, in virtual sector coordinates.
     Returns [(start_virt, end_virt, gc_pct), ...]."""
+    print("Computing organellar G/C")
     out = []
     for rec in SeqIO.parse(fasta_path, "fasta"):
         if rec.id not in offsets:
@@ -238,4 +246,34 @@ def organelle_gc(fasta_path, offsets, scale, window=2000):
                 continue
             gc = sum(1 for b in chunk if b in "GC") / valid * 100
             out.append(((off + start) * scale, (off + end) * scale, gc))
+    return out
+
+
+def load_and_average_coverage(file_paths):
+    """Reads multiple coverage files and averages the values per bin.
+    Returns [(chrom, start, end, avg_coverage), ...]."""
+    print("Computing coverage bins")
+    if not file_paths:
+        return []
+
+    sums = defaultdict(float)
+    counts = defaultdict(int)
+
+    for path in file_paths:
+        with open(path) as fh:
+            for line in fh:
+                if line.strip():
+                    p = line.rstrip().split("\t")
+                    if len(p) >= 4:
+                        chrom = p[0]
+                        start = int(p[1])
+                        end = int(p[2])
+                        val = float(p[3])
+                        sums[(chrom, start, end)] += val
+                        counts[(chrom, start, end)] += 1
+
+    out = []
+    for (chrom, start, end), total in sums.items():
+        out.append((chrom, start, end, total / counts[(chrom, start, end)]))
+    
     return out
