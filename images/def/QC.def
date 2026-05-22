@@ -20,7 +20,10 @@ From: condaforge/miniforge3:latest
         biopython \
         'pandas<2' \
         matplotlib \
-        pysam
+        pysam \
+        mcscanx \
+        diamond \
+        blast
 
     mamba clean --all --yes
 
