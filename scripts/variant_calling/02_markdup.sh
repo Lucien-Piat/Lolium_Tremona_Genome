@@ -1,12 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=markdup
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=4
-#SBATCH --mem-per-cpu=3G
-#SBATCH --time=2:00:00
+#SBATCH --cpus-per-task=3
+#SBATCH --mem-per-cpu=5G
+#SBATCH --time=1:20:00
 #SBATCH --output=logs/02_markdup_%j.log
 
-# Boilerplate
+# Carefull the mem / cpu is finetuned for Lmul Tremona
+
 set -euo pipefail
 SIF=$(readlink -f images/sif/varcall.sif)
 INDIR=$(readlink -f results/01_aligned)
@@ -22,8 +23,6 @@ SORTED="${INDIR}/${SAMPLE}.sorted.bam"
 DEDUP="${OUTDIR}/${SAMPLE}.dedup.bam"
 FLAGSTAT="${OUTDIR}/${SAMPLE}.dedup.flagstat.txt"
 
-[[ -s "${SORTED}" ]] || { echo "ERROR: missing input ${SORTED}" >&2; exit 1; }
-
 # Mark duplicates
 run sambamba markdup \
     -t "${T}" \
@@ -37,7 +36,6 @@ run sambamba markdup \
 
 run samtools flagstat -@ "${T}" "${DEDUP}" > "${FLAGSTAT}"
 
-# Cleanup
 if [[ ! -s "${DEDUP}" ]] || [[ ! -s "${DEDUP}.bai" ]]; then
     echo "ERROR: dedup output incomplete, keeping inputs" >&2
     exit 1
@@ -49,7 +47,6 @@ if [[ -z "${ALIGNED}" ]] || [[ "${ALIGNED}" -le 0 ]]; then
     exit 1
 fi
 
-echo "dedup OK (${ALIGNED} reads), removing sorted.bam"
 rm -f "${SORTED}" "${SORTED}.bai"
 rm -rf "${TMP}"
 echo "done"

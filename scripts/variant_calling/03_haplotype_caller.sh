@@ -1,10 +1,12 @@
 #!/bin/bash
 #SBATCH --job-name=hapcaller
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=4
-#SBATCH --mem-per-cpu=2G
+#SBATCH --cpus-per-task=2
+#SBATCH --mem-per-cpu=1500M
 #SBATCH --time=40:00:00
 #SBATCH --output=logs/03_hapcaller_%j.log
+
+# Carefull the mem / cpu is finetuned for Lmul Tremona (to the gigabate)
 
 set -euo pipefail
 SIF=$(readlink -f images/sif/varcall.sif)
@@ -21,10 +23,8 @@ mkdir -p "${OUTDIR}" logs
 # Decompression (once)
 REF_REL=$(run yq -r '.reference_genome' "${YAML}")
 REF_GZ=$(readlink -f "${REF_REL}")
-[[ -s "${REF_GZ}" ]] || { echo "ERROR: reference not found: ${REF_GZ}" >&2; exit 1; }
 REF="${REF_GZ%.gz}"
 if [[ ! -s "${REF}" ]]; then
-    echo "Decompressing reference at $(date)"
     (
         flock -x 200
         if [[ ! -s "${REF}" ]]; then
@@ -33,22 +33,15 @@ if [[ ! -s "${REF}" ]]; then
     ) 200>"${REF}.lock"
     rm -f "${REF}.lock"
 fi
-
 [[ -s "${REF}.fai" ]] || run samtools faidx "${REF}"
 DICT="${REF%.fa}.dict"
 [[ -s "${DICT}" ]] || run gatk CreateSequenceDictionary -R "${REF}" -O "${DICT}"
 
 BAM="${INDIR}/${SAMPLE}.dedup.bam"
 GVCF="${OUTDIR}/${SAMPLE}.g.vcf.gz"
-[[ -s "${BAM}" ]] || { echo "ERROR: missing ${BAM}" >&2; exit 1; }
-if [[ -s "${GVCF}" ]] && [[ -s "${GVCF}.tbi" ]]; then
-    echo "gVCF already exists for ${SAMPLE}, skipping"
-    exit 0
-fi
 
-# 12G cgroup, -Xmx8G leaves ~4G for JVM off-heap and native pair-HMM.
-echo "HaplotypeCaller for ${SAMPLE} at $(date)"
-run gatk --java-options "-Xmx8G" HaplotypeCaller \
+# Gatk 
+run gatk --java-options "-Xmx2G" HaplotypeCaller \
     -R "${REF}" \
     -I "${BAM}" \
     -O "${GVCF}" \
@@ -65,8 +58,6 @@ echo "Called ${VARIANTS} variant records (SNPs + indels) for ${SAMPLE}"
 
 run bcftools stats "${GVCF}" | grep '^SN' | head -20
 
-echo "gVCF OK, removing dedup.bam"
 rm -f "${BAM}" "${BAM}.bai"
 
-echo "Done for ${SAMPLE} at $(date)"
-echo "Output: ${GVCF}"
+echo "done"
