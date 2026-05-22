@@ -260,27 +260,6 @@ def build_plot(args):
 
     fig = circos.plotfig(figsize=(14, 14), dpi=150)
 
-    legend = [
-        Patch(fc=CONTIG_GRAYS[0], label="Contig (odd)"),
-        Patch(fc=CONTIG_GRAYS[1], label="Contig (even)"),
-        Patch(fc="#bdbdbd",       label="Read coverage (placeholder)"),
-        Patch(fc="#bdbdbd",       label="Repeats (placeholder)"),
-        Patch(fc=cm.Greens(0.7),  label="Gene density"),
-        Patch(fc="#5c6bc0",       label="GC content"),
-        Patch(fc=BUSCO_COLORS["Complete"],   label="BUSCO Complete"),
-        Patch(fc=BUSCO_COLORS["Duplicated"], label="BUSCO Duplicated"),
-        Patch(fc=SYNTENY_FWD,     label="Self-synteny (forward)"),
-        Patch(fc=SYNTENY_INV,     label="Self-synteny (inverted)"),
-        Patch(fc=NUMT_COLOR,      label="NUMT (mito insertion)"),
-        Patch(fc=NUPT_COLOR,      label="NUPT (plastid insertion)"),
-    ]
-    fig.legend(
-        handles=legend, loc="lower right",
-        bbox_to_anchor=(1.05, 0.0),
-        fontsize=8, frameon=True,
-        title=f"Lolium multiflorum var Tremona\n(organelles scaled {ORG_SCALE}x)",
-        title_fontsize=9,
-    )
 
     fig.savefig(args.output, bbox_inches="tight")
     if args.output.endswith(".pdf"):
