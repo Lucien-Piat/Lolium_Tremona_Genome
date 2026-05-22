@@ -132,6 +132,15 @@ def build_plot(args):
 
     for sector in circos.sectors:
         name    = sector.name
+
+        if name == "chr1":
+            sector.text("a.       ", r=97, x=0, size=11, weight="bold", ha="right")
+            sector.text("b.       ", r=89, x=0, size=11, weight="bold", ha="right")
+            sector.text("c.       ", r=81, x=0, size=11, weight="bold", ha="right")
+            sector.text("d.       ", r=73, x=0, size=11, weight="bold", ha="right")
+            sector.text("e.  ", r=65, x=0, size=11, weight="bold", ha="right")
+            sector.text("f.       ", r=57, x=0, size=11, weight="bold", ha="right")
+        
         is_mito = name == "mito"
         is_pltd = name == "pltd"
         is_org  = is_mito or is_pltd
