@@ -1,8 +1,4 @@
 #!/bin/bash
-# Self-synteny (MCScanX) + NUMT/NUPT (minimap2) data prep for Circos.
-# Each step runs only if its output file is missing. To redo a step,
-# delete its output. To redo everything, rm -rf the OUTDIR.
-
 set -euo pipefail
 
 ROOT=$(pwd)
@@ -30,12 +26,10 @@ if [ ! -s proteins.raw.faa ]; then
     echo "[$(date)] gffread"
     run gffread -y proteins.raw.faa -g "${GENOME}" "${GFF}"
 fi
-
 if [ ! -s proteins.faa ]; then
     echo "[$(date)] clean proteins"
     run python3 "${LIB}/clean_proteins.py" proteins.raw.faa proteins.faa
 fi
-
 if [ ! -s "${NAME}.gff" ]; then
     echo "[$(date)] MCScanX gff"
     run awk -v p="${PREFIX}" -F'\t' '
@@ -51,7 +45,6 @@ if [ ! -s proteins.db.dmnd ]; then
     echo "[$(date)] diamond makedb"
     run diamond makedb --in proteins.faa -d proteins.db --threads "${T}"
 fi
-
 if [ ! -s "${NAME}.blast" ]; then
     echo "[$(date)] diamond blastp"
     run diamond blastp \
@@ -65,7 +58,6 @@ if [ ! -s "${NAME}.collinearity" ]; then
     echo "[$(date)] MCScanX"
     run MCScanX -s 5 -e 1e-10 -m 25 "${OUTDIR}/${NAME}"
 fi
-
 if [ ! -s self_synteny_links.tsv ]; then
     echo "[$(date)] collinearity to links"
     run python3 "${LIB}/collinearity_to_links.py" \
@@ -75,8 +67,9 @@ fi
 # Stage 4: NUMT / NUPT
 cd "${DATA_DIR}"
 
-map_organelle() {
-    local org="$1" tag="$2" low="${2,,}"
+map_mito() {
+    local org="$1" tag="$2" minlen="$3" minid="$4"
+    local low="${tag,,}"
     local paf="${low}_to_nuclear.paf"
     local links="${low}_links.tsv"
 
@@ -85,24 +78,44 @@ map_organelle() {
         run minimap2 -t "${T}" -cx asm20 -N 50 --secondary=yes -K 10M \
             "${GENOME}" "${org}" > "${paf}"
     fi
-
     if [ ! -s "${links}" ]; then
-        echo "[$(date)] filter ${tag}"
-        run awk -v ml=500 -v mi=0.80 -v tag="${tag}" '
+        echo "[$(date)] filter ${tag} (minlen=${minlen}, minid=${minid})"
+        run awk -v ml="${minlen}" -v mi="${minid}" -v tag="${tag}" '
             $11 >= ml && ($10/$11) >= mi {
                 print $1, $3, $4, $6, $8, $9, $5, tag, ($10/$11)
             }' OFS='\t' "${paf}" > "${links}"
     fi
 }
 
-map_organelle "${MITO}" "NUMT"
-map_organelle "${PLTD}" "NUPT"
+
+map_pldt() {
+    local org="$1" tag="$2" minlen="$3" minid="$4"
+    local low="${tag,,}"
+    local paf="${low}_to_nuclear.paf"
+    local links="${low}_links.tsv"
+
+    if [ ! -s "${paf}" ]; then
+        echo "[$(date)] minimap2 ${tag}"
+        run minimap2 -t "${T}" -k 15 -w 10 -A 1 -B 2 -O 2,32 -E 1,0 \
+            -N 50 --secondary=yes -K 10M \
+            "${GENOME}" "${org}" > "${paf}"
+    fi
+    if [ ! -s "${links}" ]; then
+        echo "[$(date)] filter ${tag} (minlen=${minlen}, minid=${minid})"
+        run awk -v ml="${minlen}" -v mi="${minid}" -v tag="${tag}" '
+            $11 >= ml && ($10/$11) >= mi {
+                print $1, $3, $4, $6, $8, $9, $5, tag, ($10/$11)
+            }' OFS='\t' "${paf}" > "${links}"
+    fi
+}
+
+map_mito "${MITO}" "NUMT" 500 0.80
+map_pldt "${PLTD}" "NUPT" 200 0.70
 
 if [ ! -s organelle_insertion_links.tsv ]; then
     cat numt_links.tsv nupt_links.tsv > organelle_insertion_links.tsv
 fi
 
-# Stats (always rewritten)
 {
     echo "===== self synteny ====="
     echo "Blocks: $(tail -n +2 ${OUTDIR}/self_synteny_links.tsv | wc -l)"
