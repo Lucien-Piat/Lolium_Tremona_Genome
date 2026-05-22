@@ -108,20 +108,84 @@ def busco_orthologs(table_path):
 # Organelle annotations
 
 def organelle_features(gb_path, types=("CDS", "tRNA", "rRNA")):
-    """Parse GenBank, return [(chrom, name, start, end, strand, type), ...]."""
+    """Lenient GenBank feature parser.
+
+    Skips individual malformed features (not whole records). For locations
+    like 'join(134971..135351,1..500)' or even truncated 'join(134971..135351'
+    we just take the min/max of any numeric ranges found.
+
+    Returns [(chrom_id, name, start, end, strand, ftype), ...].
+    """
+    import re
+
     out = []
-    for rec in SeqIO.parse(gb_path, "genbank"):
-        for feat in rec.features:
-            if feat.type not in types:
-                continue
-            name = feat.qualifiers.get("gene",
-                   feat.qualifiers.get("product", ["?"]))[0]
-            out.append((
-                rec.id, name,
-                int(feat.location.start), int(feat.location.end),
-                feat.location.strand or 1, feat.type,
-            ))
+    chrom_id = None
+    in_features = False
+    ftype, floc, fquals = None, None, {}
+
+    header_re = re.compile(r"^ {5}(\S+)\s+(.+?)\s*$")
+
+    def flush():
+        nonlocal ftype, floc, fquals
+        if ftype in types and floc:
+            parsed = _parse_loc(floc)
+            if parsed is not None:
+                start, end, strand = parsed
+                name = fquals.get("gene") or fquals.get("product") or "?"
+                out.append((chrom_id, name, start, end, strand, ftype))
+        ftype, floc, fquals = None, None, {}
+
+    with open(gb_path) as fh:
+        for line in fh:
+            line = line.rstrip("\n")
+            if line.startswith("LOCUS"):
+                flush()
+                parts = line.split()
+                chrom_id = parts[1] if len(parts) > 1 else None
+                in_features = False
+            elif line.startswith("FEATURES"):
+                in_features = True
+            elif line.startswith("ORIGIN") or line.startswith("//"):
+                flush()
+                in_features = False
+            elif in_features:
+                # New feature: exactly 5 leading spaces
+                if len(line) - len(line.lstrip(" ")) == 5:
+                    m = header_re.match(line)
+                    if m:
+                        flush()
+                        ftype = m.group(1)
+                        floc = m.group(2).strip()
+                elif line.startswith(" " * 21):
+                    content = line[21:].strip()
+                    if content.startswith("/"):
+                        qm = re.match(r"/(\w+)=?\"?([^\"]*)\"?", content)
+                        if qm:
+                            fquals[qm.group(1)] = qm.group(2)
+                    elif floc is not None:
+                        floc += content
+    flush()
     return out
+
+
+def _parse_loc(loc_str):
+    """Parse a GenBank location string. Returns (start_0based, end, strand) or None."""
+    import re
+    strand = 1
+    if loc_str.startswith("complement("):
+        strand = -1
+        loc_str = loc_str[11:]
+    # Strip wrappers
+    for prefix in ("join(", "order("):
+        if loc_str.startswith(prefix):
+            loc_str = loc_str[len(prefix):]
+    matches = re.findall(r"(\d+)\.\.(\d+)", loc_str)
+    if not matches:
+        return None
+    starts = [int(m[0]) for m in matches]
+    ends   = [int(m[1]) for m in matches]
+    s, e = min(starts) - 1, max(ends)
+    return (s, e, strand) if e > s else None
 
 
 # Links
@@ -155,4 +219,23 @@ def load_organelle_links(path):
                 "nuc_chr": p[3], "nuc_start": int(p[4]), "nuc_end": int(p[5]),
                 "strand": p[6], "tag": p[7], "identity": float(p[8]),
             })
+    return out
+
+def organelle_gc(fasta_path, offsets, scale, window=2000):
+    """GC content for organelle contigs, in virtual sector coordinates.
+    Returns [(start_virt, end_virt, gc_pct), ...]."""
+    out = []
+    for rec in SeqIO.parse(fasta_path, "fasta"):
+        if rec.id not in offsets:
+            continue
+        off = offsets[rec.id]
+        seq = str(rec.seq).upper()
+        for start in range(0, len(seq), window):
+            end = min(start + window, len(seq))
+            chunk = seq[start:end]
+            valid = sum(1 for b in chunk if b in "ACGT")
+            if valid == 0:
+                continue
+            gc = sum(1 for b in chunk if b in "GC") / valid * 100
+            out.append(((off + start) * scale, (off + end) * scale, gc))
     return out
