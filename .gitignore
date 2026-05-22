@@ -13,3 +13,5 @@ logs
 04c_*
 reads/*
 .cache*
+__pycache__
+history.txt
