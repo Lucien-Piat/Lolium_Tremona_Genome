@@ -23,9 +23,6 @@ WINDOW    = 1_000_000
 ORG_WIN   = 2_000
 ORG_SEP   = 5000
 
-# GC range used across all sectors so nuclear and organelle scales are comparable
-GC_VMIN, GC_VMAX, GC_BASELINE = 25.0, 65.0, 45.0
-
 # Colors
 CONTIG_GRAYS = ["#5a5a5a", "#a8a8a8"]
 NUC_PALETTE  = ["#1f77b4", "#ff7f0e", "#2ca02c", "#9467bd", "#8c564b", "#e377c2", "#17becf"]
@@ -202,19 +199,26 @@ def build_plot(args):
                 y = np.array([v for _, _, v in cgc])
             else:
                 x, y = np.array([]), np.array([])
+        
         if len(x):
-            if is_org:
-                vmin = y.min() - 2
-                vmax = y.max() + 2
-                vbase = y.mean()
-            else:
-                vmin, vmax, vbase = GC_VMIN, GC_VMAX, GC_BASELINE
+            y_clipped = np.clip(y, GC_VMIN, GC_VMAX)
 
-            gc_tr.fill_between(x, y, y2=np.full_like(y, vbase),
-                               vmin=vmin, vmax=vmax,
-                               fc="#5c6bc0", alpha=0.4)
-            gc_tr.line(x, y, vmin=vmin, vmax=vmax,
-                       color="#1a237e", lw=0.5)
+            y_above = np.maximum(y_clipped, GC_BASELINE)
+            y_below = np.minimum(y_clipped, GC_BASELINE)
+            y_base  = np.full_like(y_clipped, GC_BASELINE)
+
+            # Vert pour les régions riches en GC (> 45%)
+            gc_tr.fill_between(x, y_above, y2=y_base,
+                               vmin=GC_VMIN, vmax=GC_VMAX,
+                               fc="#4caf50", alpha=0.8)
+            
+            # Rouge pour les régions pauvres en GC (< 45%)
+            gc_tr.fill_between(x, y_below, y2=y_base,
+                               vmin=GC_VMIN, vmax=GC_VMAX,
+                               fc="#e53935", alpha=0.8)
+            
+            gc_tr.line(x, y_clipped, vmin=GC_VMIN, vmax=GC_VMAX,
+                       color="black", lw=0.3)
 
         # BUSCO: overlapping wider bars, only Complete + Duplicated
         bu_tr = sector.add_track((54, 60))
