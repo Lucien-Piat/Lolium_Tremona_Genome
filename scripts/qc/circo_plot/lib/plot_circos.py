@@ -241,6 +241,7 @@ def build_plot(args):
             color=color, alpha=alpha, lw=0.4,
         )
 
+    numts.sort(key=lambda l: abs(l["nuc_start"] - l["nuc_end"]), reverse=True)
     for l in numts:
         off = mito_offsets[l["org_chr"]]
         circos.link(
@@ -249,6 +250,8 @@ def build_plot(args):
             (l["nuc_chr"], l["nuc_start"], l["nuc_end"]),
             color=NUMT_COLOR, alpha=0.6, lw=0.5,
         )
+    
+    nupts.sort(key=lambda l: abs(l["nuc_start"] - l["nuc_end"]), reverse=True)
     for l in nupts:
         off = pltd_offsets[l["org_chr"]]
         circos.link(
