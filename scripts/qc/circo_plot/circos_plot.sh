@@ -22,4 +22,5 @@ run python3 plot_circos.py \
     --pltd-fasta  "${DATA}/lmul_tremona.pltd.fasta" \
     --mito-gb     "${DATA}/lmul_tremona.mito.gb" \
     --pltd-gb     "${DATA}/lmul_tremona.pltd.gb" \
+    --coverage    "${DATA}/"TREM*_circos_50000bp.txt \
     --output      "${DATA}/circos.pdf"

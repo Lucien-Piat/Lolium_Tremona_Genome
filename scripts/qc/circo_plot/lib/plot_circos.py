@@ -13,7 +13,7 @@ from pycirclize import Circos # type: ignore
 from tracks import (
     read_fai, organelle_lengths, find_gaps,
     gc_windows, organelle_gc, gene_density, busco_orthologs, organelle_features,
-    load_self_synteny, load_organelle_links,
+    load_self_synteny, load_organelle_links, load_and_average_coverage
 )
 
 # Visual parameters
@@ -109,6 +109,17 @@ def build_plot(args):
     print("[info] computing tracks", file=sys.stderr)
     gaps  = find_gaps(args.genome, min_gap=GAP_MIN)
     gc    = gc_windows(args.genome, window=WINDOW)
+
+    all_nuc_gc = [v for _, _, _, v in gc]
+    if all_nuc_gc:
+        # On ajoute/enlève 1% de marge pour que les pics ne touchent pas le bord
+        GC_VMIN = min(all_nuc_gc) - 1.0
+        GC_VMAX = max(all_nuc_gc) + 1.0
+    else:
+        GC_VMIN, GC_VMAX = 35.0, 55.0
+    GC_BASELINE = 45.0
+    print(f"[info] Auto GC scale (Nuclear): min={GC_VMIN:.2f}%, max={GC_VMAX:.2f}%", file=sys.stderr)
+
     genes = gene_density(args.gff, nuc, window=WINDOW)
     busco = busco_orthologs(args.busco)
     mito_feats = organelle_features(args.mito_gb)
@@ -127,8 +138,16 @@ def build_plot(args):
     print(f"[info] {len(synteny)} synteny, {len(numts)} NUMTs, {len(nupts)} NUPTs",
           file=sys.stderr)
 
+    coverage_data = load_and_average_coverage(args.coverage)
+    global_cov_max = 100 # Valeur par défaut
+    if coverage_data:
+        all_cov_vals = [v for _, _, _, v in coverage_data]
+        # On coupe au 98ème percentile pour éviter que les répétitions écrasent l'échelle
+        global_cov_max = np.percentile(all_cov_vals, 98)
+
     print("[info] building Circos", file=sys.stderr)
-    circos = Circos(sectors, space=3)
+    spaces = [3] * (len(sectors) - 1) + [5]  # 12 degrés de séparation à la fin
+    circos = Circos(sectors, space=spaces)
 
     for sector in circos.sectors:
         name    = sector.name
@@ -161,11 +180,32 @@ def build_plot(args):
             draw_nuclear_ideogram(ideo_tr, name, sec_len, gaps)
 
         sector.text(name, r=109, size=11, weight="bold")
-        ideo_tr.xticks(by=10_000_000, tick_length=2, outer=True, label_formatter=lambda v: f"{v/1e6:.0f}M")
-        # Read coverage placeholder
-        reads_tr = sector.add_track((86, 92))
-        reads_tr.axis(fc="#f5f5f5", ec="black", lw=0.2)
 
+        # Read coverage (nuclear only for now)
+        reads_tr = sector.add_track((86, 92))
+        reads_tr.axis(fc="white", ec="black", lw=0.2)
+        
+        if not is_org and coverage_data:
+            cov_sector = [(s, e, v) for c, s, e, v in coverage_data if c == name]
+            if cov_sector:
+                cov_sector.sort(key=lambda x: x[0])
+                x = np.array([(s + e) / 2 for s, e, _ in cov_sector])
+                y = np.array([v for _, _, v in cov_sector])
+                
+                # Limit the extreme peaks
+                y_clipped = np.clip(y, 0, global_cov_max)
+                
+                window_size = 20
+                y_smoothed = np.convolve(y_clipped, np.ones(window_size)/window_size, mode='same')
+                
+                # Draw the fill using the smoothed data
+                reads_tr.fill_between(x, y_smoothed, y2=np.zeros_like(y),
+                                      vmin=0, vmax=global_cov_max,
+                                      fc="#7e57c2", alpha=0.7)
+                
+                # Draw the line back on top, also using the smoothed data!
+                reads_tr.line(x, y_smoothed, vmin=0, vmax=global_cov_max,
+                              color="#4527a0", lw=0.6) # Slightly thicker line (0.6) for crispness
         # Repeats placeholder
         rep_tr = sector.add_track((78, 84))
         rep_tr.axis(fc="#f5f5f5", ec="black", lw=0.2)
@@ -298,6 +338,7 @@ if __name__ == "__main__":
     p.add_argument("--pltd-fasta",  required=True, dest="pltd_fasta")
     p.add_argument("--mito-gb",     required=True, dest="mito_gb")
     p.add_argument("--pltd-gb",     required=True, dest="pltd_gb")
+    p.add_argument("--coverage", nargs="*", default=[], help="List of coverage files")
     p.add_argument("--output",      default="results/data_circo/circos.pdf")
     args = p.parse_args()
     build_plot(args)
