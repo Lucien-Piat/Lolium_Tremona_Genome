@@ -3,12 +3,12 @@ import argparse
 import sys
 from pathlib import Path
 
-import matplotlib as mpl
-import matplotlib.cm as cm
-import matplotlib.pyplot as plt
-import numpy as np
-from matplotlib.patches import Patch
-from pycirclize import Circos
+import matplotlib as mpl # type: ignore
+import matplotlib.cm as cm # type: ignore
+import matplotlib.pyplot as plt # type: ignore
+import numpy as np # type: ignore
+from matplotlib.patches import Patch # type: ignore
+from pycirclize import Circos # type: ignore
 
 from tracks import (
     read_fai, organelle_lengths, find_gaps,

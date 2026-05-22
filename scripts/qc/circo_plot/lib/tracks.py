@@ -2,7 +2,7 @@
 from bisect import bisect_left
 from collections import OrderedDict, defaultdict
 
-from Bio import SeqIO
+from Bio import SeqIO # type: ignore
 
 
 # Karyotype

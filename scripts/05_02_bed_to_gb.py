@@ -2,8 +2,8 @@
 #!/usr/bin/env python3
 """Convert Oatk FASTA + BED to GenBank format."""
 import sys
-from Bio import SeqIO
-from Bio.SeqFeature import SeqFeature, FeatureLocation
+from Bio import SeqIO # type: ignore
+from Bio.SeqFeature import SeqFeature, FeatureLocation # type: ignore
 
 def feature_type(gene_name):
     if gene_name.startswith('trn'):

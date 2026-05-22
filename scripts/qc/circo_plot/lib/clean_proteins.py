@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Drop proteins shorter than 30 aa or with only X"""
 import sys
-from Bio import SeqIO
+from Bio import SeqIO # type: ignore
 
 def main(in_faa, out_faa, min_len=30):
     kept = dropped = 0
