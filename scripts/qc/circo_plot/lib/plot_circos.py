@@ -139,11 +139,16 @@ def build_plot(args):
           file=sys.stderr)
 
     coverage_data = load_and_average_coverage(args.coverage)
-    global_cov_max = 100 # Valeur par défaut
+    global_cov_max = 100
+    global_cov_min = 0
+    global_cov_base = 50
     if coverage_data:
         all_cov_vals = [v for _, _, _, v in coverage_data]
-        # On coupe au 98ème percentile pour éviter que les répétitions écrasent l'échelle
+        # 98th percentile for max, 2nd percentile for min to ignore extreme outliers on both ends
         global_cov_max = np.percentile(all_cov_vals, 98)
+        global_cov_min = max(0, np.percentile(all_cov_vals, 2))
+        global_cov_base = np.median(all_cov_vals)
+    print(f"[info] Auto Coverage scale: min={global_cov_min:.0f}, max={global_cov_max:.0f}, base={global_cov_base:.0f}", file=sys.stderr)
 
     print("[info] building Circos", file=sys.stderr)
     spaces = [3] * (len(sectors) - 1) + [5]  # 12 degrés de séparation à la fin
@@ -153,12 +158,12 @@ def build_plot(args):
         name    = sector.name
 
         if name == "chr1":
-            sector.text("a.       ", r=97, x=0, size=11, weight="bold", ha="right")
-            sector.text("b.       ", r=89, x=0, size=11, weight="bold", ha="right")
-            sector.text("c.       ", r=81, x=0, size=11, weight="bold", ha="right")
-            sector.text("d.       ", r=73, x=0, size=11, weight="bold", ha="right")
-            sector.text("e.  ", r=65, x=0, size=11, weight="bold", ha="right")
-            sector.text("f.       ", r=57, x=0, size=11, weight="bold", ha="right")
+            sector.text("a.      ", r=97, x=0, size=11, weight="bold", ha="right")
+            sector.text("b.      ", r=89, x=0, size=11, weight="bold", ha="right")
+            sector.text("c.      ", r=81, x=0, size=11, weight="bold", ha="right")
+            sector.text("d.      ", r=73, x=0, size=11, weight="bold", ha="right")
+            sector.text("e.      ", r=65, x=0, size=11, weight="bold", ha="right")
+            sector.text("f.      ", r=57, x=0, size=11, weight="bold", ha="right")
         
         is_mito = name == "mito"
         is_pltd = name == "pltd"
@@ -181,7 +186,7 @@ def build_plot(args):
 
         sector.text(name, r=109, size=11, weight="bold")
 
-        # Read coverage (nuclear only for now)
+        # Read coverage (nuclear only for now, organelles use virtual offsets)
         reads_tr = sector.add_track((86, 92))
         reads_tr.axis(fc="white", ec="black", lw=0.2)
         
@@ -192,20 +197,32 @@ def build_plot(args):
                 x = np.array([(s + e) / 2 for s, e, _ in cov_sector])
                 y = np.array([v for _, _, v in cov_sector])
                 
-                # Limit the extreme peaks
-                y_clipped = np.clip(y, 0, global_cov_max)
+                # Clip values strictly between our calculated min and max
+                y_clipped = np.clip(y, global_cov_min, global_cov_max)
                 
+                # Apply smoothing
                 window_size = 20
                 y_smoothed = np.convolve(y_clipped, np.ones(window_size)/window_size, mode='same')
+                y_smoothed = np.clip(y_smoothed, global_cov_min, global_cov_max)
+                # Dual-color baseline split
+                y_base  = np.full_like(y_smoothed, global_cov_base)
+                y_above = np.maximum(y_smoothed, global_cov_base)
+                y_below = np.minimum(y_smoothed, global_cov_base)
                 
-                # Draw the fill using the smoothed data
-                reads_tr.fill_between(x, y_smoothed, y2=np.zeros_like(y),
-                                      vmin=0, vmax=global_cov_max,
-                                      fc="#7e57c2", alpha=0.7)
+                # Dark purple for high coverage (> median)
+                reads_tr.fill_between(x, y_above, y2=y_base,
+                                      vmin=global_cov_min, vmax=global_cov_max,
+                                      fc="#5e35b1", alpha=0.85)
                 
-                # Draw the line back on top, also using the smoothed data!
-                reads_tr.line(x, y_smoothed, vmin=0, vmax=global_cov_max,
-                              color="#4527a0", lw=0.6) # Slightly thicker line (0.6) for crispness
+                # Light soft purple for low coverage (< median)
+                reads_tr.fill_between(x, y_below, y2=y_base,
+                                      vmin=global_cov_min, vmax=global_cov_max,
+                                      fc="#b39ddb", alpha=0.6)
+                
+                # Crisp border line
+                reads_tr.line(x, y_smoothed, vmin=global_cov_min, vmax=global_cov_max,
+                              color="#311b92", lw=0.6)
+                
         # Repeats placeholder
         rep_tr = sector.add_track((78, 84))
         rep_tr.axis(fc="#f5f5f5", ec="black", lw=0.2)
