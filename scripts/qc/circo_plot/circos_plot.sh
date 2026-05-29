@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT=$(pwd)
 SIF="${ROOT}/images/sif/QC.sif"
 LIB="${ROOT}/scripts/qc/circo_plot/lib"
-DATA="${ROOT}/results/data_circo"
+DATA="${ROOT}/results/crico_trem"
 
 run() { singularity exec --bind "${ROOT}":"${ROOT}" "${SIF}" "$@"; }
 

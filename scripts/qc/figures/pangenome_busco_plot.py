@@ -16,10 +16,10 @@ import sys
 import concurrent.futures
 from pathlib import Path
 
-import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from matplotlib.ticker import FuncFormatter, MultipleLocator
+import pandas as pd # type: ignore
+import matplotlib.pyplot as plt # type: ignore
+import matplotlib.patches as mpatches # type: ignore
+from matplotlib.ticker import FuncFormatter, MultipleLocator # type: ignore
 
 def opener(path):
     return gzip.open(path, "rt") if str(path).endswith(".gz") else open(path)
