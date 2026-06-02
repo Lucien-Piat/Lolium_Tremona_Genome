@@ -1,0 +1,129 @@
+reference_genome: reference_data/lmultiflorum.tremona.primary.fa
+
+samples:
+  - name: TREM1
+    r1: reads/TREM1_R1.fastq.gz
+    r2: reads/TREM1_R2.fastq.gz
+  - name: TREM2
+    r1: reads/TREM2_R1.fastq.gz
+    r2: reads/TREM2_R2.fastq.gz
+  - name: TREM3
+    r1: reads/TREM3_R1.fastq.gz
+    r2: reads/TREM3_R2.fastq.gz
+  - name: TREM4
+    r1: reads/TREM4_R1.fastq.gz
+    r2: reads/TREM4_R2.fastq.gz
+  - name: TREM5
+    r1: reads/TREM5_R1.fastq.gz
+    r2: reads/TREM5_R2.fastq.gz
+  - name: TREM6
+    r1: reads/TREM6_R1.fastq.gz
+    r2: reads/TREM6_R2.fastq.gz
+  - name: TREM7
+    r1: reads/TREM7_R1.fastq.gz
+    r2: reads/TREM7_R2.fastq.gz
+  - name: TREM8
+    r1: reads/TREM8_R1.fastq.gz
+    r2: reads/TREM8_R2.fastq.gz
+  - name: TREM9
+    r1: reads/TREM9_R1.fastq.gz
+    r2: reads/TREM9_R2.fastq.gz
+  - name: TREM10
+    r1: reads/TREM10_R1.fastq.gz
+    r2: reads/TREM10_R2.fastq.gz
+  - name: TREM11
+    r1: reads/TREM11_R1.fastq.gz
+    r2: reads/TREM11_R2.fastq.gz
+  - name: GULF_100
+    r1: reads/Brunharo_GULF_100_R1.fastq.gz
+    r2: reads/Brunharo_GULF_100_R2.fastq.gz
+  - name: GULF_14
+    r1: reads/Brunharo_GULF_14_R1.fastq.gz
+    r2: reads/Brunharo_GULF_14_R2.fastq.gz
+  - name: GULF_58
+    r1: reads/Brunharo_GULF_58_R1.fastq.gz
+    r2: reads/Brunharo_GULF_58_R2.fastq.gz
+  - name: L31_106
+    r1: reads/Brunharo_L31_106_R1.fastq.gz
+    r2: reads/Brunharo_L31_106_R2.fastq.gz
+  - name: L31_11
+    r1: reads/Brunharo_L31_11_R1.fastq.gz
+    r2: reads/Brunharo_L31_11_R2.fastq.gz
+  - name: L31_17
+    r1: reads/Brunharo_L31_17_R1.fastq.gz
+    r2: reads/Brunharo_L31_17_R2.fastq.gz
+  - name: L46_11
+    r1: reads/Brunharo_L46_11_R1.fastq.gz
+    r2: reads/Brunharo_L46_11_R2.fastq.gz
+  - name: L46_13
+    r1: reads/Brunharo_L46_13_R1.fastq.gz
+    r2: reads/Brunharo_L46_13_R2.fastq.gz
+  - name: L46_16
+    r1: reads/Brunharo_L46_16_R1.fastq.gz
+    r2: reads/Brunharo_L46_16_R2.fastq.gz
+  - name: L60_102
+    r1: reads/Brunharo_L60_102_R1.fastq.gz
+    r2: reads/Brunharo_L60_102_R2.fastq.gz
+  - name: L60_106
+    r1: reads/Brunharo_L60_106_R1.fastq.gz
+    r2: reads/Brunharo_L60_106_R2.fastq.gz
+  - name: L60_107
+    r1: reads/Brunharo_L60_107_R1.fastq.gz
+    r2: reads/Brunharo_L60_107_R2.fastq.gz
+  - name: PR_16
+    r1: reads/Brunharo_PR_16_R1.fastq.gz
+    r2: reads/Brunharo_PR_16_R2.fastq.gz
+  - name: PR_18
+    r1: reads/Brunharo_PR_18_R1.fastq.gz
+    r2: reads/Brunharo_PR_18_R2.fastq.gz
+  - name: PR_22
+    r1: reads/Brunharo_PR_22_R1.fastq.gz
+    r2: reads/Brunharo_PR_22_R2.fastq.gz
+  - name: PR_35
+    r1: reads/Brunharo_PR_35_R1.fastq.gz
+    r2: reads/Brunharo_PR_35_R2.fastq.gz
+  - name: PR_43
+    r1: reads/Brunharo_PR_43_R1.fastq.gz
+    r2: reads/Brunharo_PR_43_R2.fastq.gz
+  - name: PR_47
+    r1: reads/Brunharo_PR_47_R1.fastq.gz
+    r2: reads/Brunharo_PR_47_R2.fastq.gz
+  - name: PR_48
+    r1: reads/Brunharo_PR_48_R1.fastq.gz
+    r2: reads/Brunharo_PR_48_R2.fastq.gz
+  - name: PR_57
+    r1: reads/Brunharo_PR_57_R1.fastq.gz
+    r2: reads/Brunharo_PR_57_R2.fastq.gz
+  - name: PR_58
+    r1: reads/Brunharo_PR_58_R1.fastq.gz
+    r2: reads/Brunharo_PR_58_R2.fastq.gz
+  - name: PR_60
+    r1: reads/Brunharo_PR_60_R1.fastq.gz
+    r2: reads/Brunharo_PR_60_R2.fastq.gz
+  - name: PR_62
+    r1: reads/Brunharo_PR_62_R1.fastq.gz
+    r2: reads/Brunharo_PR_62_R2.fastq.gz
+  - name: PR_64
+    r1: reads/Brunharo_PR_64_R1.fastq.gz
+    r2: reads/Brunharo_PR_64_R2.fastq.gz
+  - name: PR_70
+    r1: reads/Brunharo_PR_70_R1.fastq.gz
+    r2: reads/Brunharo_PR_70_R2.fastq.gz
+  - name: PR_73
+    r1: reads/Brunharo_PR_73_R1.fastq.gz
+    r2: reads/Brunharo_PR_73_R2.fastq.gz
+  - name: PR_84
+    r1: reads/Brunharo_PR_84_R1.fastq.gz
+    r2: reads/Brunharo_PR_84_R2.fastq.gz
+  - name: PR_8
+    r1: reads/Brunharo_PR_8_R1.fastq.gz
+    r2: reads/Brunharo_PR_8_R2.fastq.gz
+  - name: SLB_46
+    r1: reads/Brunharo_SLB_46_R1.fastq.gz
+    r2: reads/Brunharo_SLB_46_R2.fastq.gz
+  - name: SLB_49
+    r1: reads/Brunharo_SLB_49_R1.fastq.gz
+    r2: reads/Brunharo_SLB_49_R2.fastq.gz
+  - name: SLB_55
+    r1: reads/Brunharo_SLB_55_R1.fastq.gz
+    r2: reads/Brunharo_SLB_55_R2.fastq.gz
