@@ -10,9 +10,11 @@ run() { singularity exec --bind "${ROOT}":"${ROOT}" "${SIF}" "$@"; }
 
 DATASETS=(
   "tremona|reference_data/lmultiflorum.tremona.fa"
-  "perenne|reference_data/lmultiflorum.perenne.fa"
+  "rabiosa|reference_data/lmultiflorum.rabiosa.fa"
   "paraquat|reference_data/lmultiflorum.paraquat.fasta"
+  "perenne|reference_data/lmultiflorum.perenne.fa"
   "brachypodium|results/synteny/brachypodium/genome.fa"
+  "oryza|results/synteny/oryza/genome.fa"
 )
 
 for d in "${DATASETS[@]}"; do
