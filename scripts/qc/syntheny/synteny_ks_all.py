@@ -6,10 +6,10 @@ import sys
 import tempfile
 from collections import defaultdict
 
-import matplotlib.pyplot as plt
-import numpy as np
-from Bio import SeqIO
-from Bio.Align import PairwiseAligner, substitution_matrices
+import matplotlib.pyplot as plt # type: ignore
+import numpy as np # type: ignore
+from Bio import SeqIO # type: ignore
+from Bio.Align import PairwiseAligner, substitution_matrices # type: ignore
 
 MAX_KS    = 3.2
 BIN_WIDTH = 0.04
@@ -19,7 +19,7 @@ INTER_COLOR = "#1976d2"
 INTRA_COLOR = "#9c27b0"
 
 SYN_BASE = "results/synteny"
-DATASETS = ["tremona", "perenne", "paraquat", "brachypodium"]
+DATASETS = ["tremona", "rabiosa","paraquat", "perenne", "brachypodium, oryza"]
 OUTPUT   = "results/synteny/synteny_ks_all.pdf"
 
 CODON_TABLE = {
