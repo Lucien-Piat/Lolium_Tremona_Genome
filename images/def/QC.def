@@ -26,7 +26,8 @@ From: condaforge/miniforge3:latest
         diamond \
         blast \
         pycirclize \
-        kakscalculator2
+        kakscalculator2 \
+        orthofinder
 
     mamba clean --all --yes
 
