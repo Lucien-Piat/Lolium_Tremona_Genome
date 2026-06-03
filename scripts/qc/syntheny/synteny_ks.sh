@@ -1,22 +1,31 @@
 #!/bin/bash
+# Ka/Ks (NG) + overlay BUSCO, Tremona uniquement
 set -euo pipefail
+
 ROOT=$(pwd)
 SIF="${ROOT}/images/sif/QC.sif"
-GENOME="${ROOT}/results/data_circo/lmultiflorum.tremona.placed.fa"
-GFF="${ROOT}/results/data_circo/tremona.gene_annotation.placed.gff"
-DATA="${ROOT}/results/data_circo"
-MCS="${DATA}/mcscanx"
-LIB="${ROOT}/scripts/qc/circo_plot/lib"
+LIB="${ROOT}/scripts/qc/syntheny"
+SYN="${ROOT}/results/synteny/tremona"
+GENOME="${ROOT}/reference_data/lmultiflorum.tremona.fa"
+GFF="${SYN}/annotation.gff3"
+BUSCO="${ROOT}/reference_data/lmultiflorum.tremona_full_table_busco_format.tsv"
 
 run() { singularity exec --bind "${ROOT}":"${ROOT}" "${SIF}" "$@"; }
 
-if [ ! -s "${MCS}/cds.fa" ]; then
+if [ ! -s "${SYN}/cds.fa" ]; then
     echo "[$(date)] Extracting CDS"
-    run gffread -x "${MCS}/cds.fa" -g "${GENOME}" "${GFF}"
+    run gffread -x "${SYN}/cds.raw.fa" -g "${GENOME}" "${GFF}"
+    run awk '
+        function canon(s){ sub(/^rna-/,"",s); sub(/^gene-/,"",s); return s }
+        /^>/ { split(substr($0,2),p," "); print ">" canon(p[1]); next }
+        { print }' "${SYN}/cds.raw.fa" > "${SYN}/cds.fa"
 fi
 
-run python3 "${LIB}/synteny_ks.py" \
-    --collinearity "${MCS}/tremona.collinearity" \
-    --cds          "${MCS}/cds.fa" \
-    --output       "${DATA}/synteny_ks.pdf" \
-    --keep-tmp
+N=$(comm -12 \
+    <(awk -F'\t' '$3=="mRNA"{print $1}' "${GFF}" | sort -u) \
+    <(awk -F'\t' '!/^#/{print $3}' "${BUSCO}" | sort -u) | wc -l)
+echo "[$(date)] chromosomes communs GFF/BUSCO : ${N}"
+[ "${N}" -eq 0 ] && echo "ATTENTION: overlay BUSCO vide, GFF et BUSCO sur assemblages differents." >&2
+
+run python3 "${LIB}/synteny_ks.py" --keep-tmp
+echo "[$(date)] Done -> ${SYN}/synteny_ks.pdf"
