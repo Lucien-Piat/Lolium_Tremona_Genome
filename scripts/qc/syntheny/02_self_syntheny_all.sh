@@ -14,8 +14,9 @@ run() { singularity exec --bind "${ROOT}":"${ROOT}" "${SIF}" "$@"; }
 
 DATASETS=(
   "tremona|reference_data/lmultiflorum.tremona.fa|reference_data/lmultiflorum.tremona.gene_annotation.gff|tr"
-  "perenne|reference_data/lmultiflorum.perenne.fa|results/annotation/tremona_to_lmultiflorum.perenne.gff.gz|pe"
+  "rabiosa|reference_data/lmultiflorum.rabiosa.fa|results/annotation/tremona_to_lmultiflorum.rabiosa.gff.gz|ra"
   "paraquat|reference_data/lmultiflorum.paraquat.fasta|results/annotation/tremona_to_lmultiflorum.paraquat.gff.gz|pq"
+  "perenne|reference_data/lmultiflorum.perenne.fa|results/annotation/tremona_to_lmultiflorum.perenne.gff.gz|pe"
   "brachypodium|reference_data/brachypodium.fna.gz|reference_data/brachypodium.gff.gz|bd"
   "oryza|reference_data/oryza.fna.gz|reference_data/oryza.gff.gz|os"
 )
@@ -36,8 +37,15 @@ run_self_synteny() {
     local GFF="${OUTDIR}/annotation.gff3"
     if [ ! -s "${GFF}" ]; then
         zcat -f "${ROOT}/${GFF_IN}" \
-            | awk -F'\t' 'BEGIN{OFS="\t"} /^#/{print;next} NF>=8 && $7=="?"{$7="+"} {print}' \
-            > "${GFF}"
+            | awk -F'\t' '
+                BEGIN{OFS="\t"}
+                /^#/ {print; next}
+                # flag organelle sequences (NCBI region line carries genome=...)
+                $3=="region" && $9 ~ /genome=(chloroplast|mitochondrion|plastid|apicoplast)/ { org[$1]=1; next }
+                ($1 in org) {next}            # drop every feature on an organelle
+                NF>=8 && $7=="?" {$7="+"}      # keep the trans-splice strand fix
+                {print}
+            ' > "${GFF}"
     fi
 
     cd "${OUTDIR}"
