@@ -17,12 +17,12 @@ import sys
 import tempfile
 from collections import defaultdict
 
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-from Bio import SeqIO
-from Bio.Align import PairwiseAligner, substitution_matrices
-from scipy.interpolate import PchipInterpolator
+import matplotlib.pyplot as plt # type: ignore
+import numpy as np # type: ignore
+import pandas as pd # type: ignore
+from Bio import SeqIO # type: ignore
+from Bio.Align import PairwiseAligner, substitution_matrices # type: ignore
+from scipy.interpolate import PchipInterpolator # type: ignore
 
 MU_S      = 5.76174e-9     # De La Torre et al. 2017
 HET_KS    = 0.0327         # genome heterozygosity (~3.27%)
