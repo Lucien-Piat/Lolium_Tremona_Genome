@@ -126,4 +126,193 @@ samples:
     r2: reads/Brunharo_SLB_49_R2.fastq.gz
   - name: SLB_55
     r1: reads/Brunharo_SLB_55_R1.fastq.gz
-    r2: reads/Brunharo_SLB_55_R2.fastq.gz
+    r2: reads/Brunharo_SLB_55_R2.fastq.gz ###
+  - name: GULF_6
+    r1: reads/Brunharo_GULF_6_R1.fastq.gz
+    r2: reads/Brunharo_GULF_6_R2.fastq.gz
+  - name: GULF_66
+    r1: reads/Brunharo_GULF_66_R1.fastq.gz
+    r2: reads/Brunharo_GULF_66_R2.fastq.gz
+  - name: GULF_76
+    r1: reads/Brunharo_GULF_76_R1.fastq.gz
+    r2: reads/Brunharo_GULF_76_R2.fastq.gz
+  - name: GULF_8
+    r1: reads/Brunharo_GULF_8_R1.fastq.gz
+    r2: reads/Brunharo_GULF_8_R2.fastq.gz
+  - name: GULF_87
+    r1: reads/Brunharo_GULF_87_R1.fastq.gz
+    r2: reads/Brunharo_GULF_87_R2.fastq.gz
+  - name: GULF_89
+    r1: reads/Brunharo_GULF_89_R1.fastq.gz
+    r2: reads/Brunharo_GULF_89_R2.fastq.gz
+  - name: GULF_90
+    r1: reads/Brunharo_GULF_90_R1.fastq.gz
+    r2: reads/Brunharo_GULF_90_R2.fastq.gz
+  - name: GULF_16
+    r1: reads/Brunharo_GULF_16_R1.fastq.gz
+    r2: reads/Brunharo_GULF_16_R2.fastq.gz
+  - name: GULF_94
+    r1: reads/Brunharo_GULF_94_R1.fastq.gz
+    r2: reads/Brunharo_GULF_94_R2.fastq.gz
+  - name: L31_23
+    r1: reads/Brunharo_L31_23_R1.fastq.gz
+    r2: reads/Brunharo_L31_23_R2.fastq.gz
+  - name: L31_3
+    r1: reads/Brunharo_L31_3_R1.fastq.gz
+    r2: reads/Brunharo_L31_3_R2.fastq.gz
+  - name: L31_38
+    r1: reads/Brunharo_L31_38_R1.fastq.gz
+    r2: reads/Brunharo_L31_38_R2.fastq.gz
+  - name: L31_39
+    r1: reads/Brunharo_L31_39_R1.fastq.gz
+    r2: reads/Brunharo_L31_39_R2.fastq.gz
+  - name: L31_52
+    r1: reads/Brunharo_L31_52_R1.fastq.gz
+    r2: reads/Brunharo_L31_52_R2.fastq.gz
+  - name: GULF_2
+    r1: reads/Brunharo_GULF_2_R1.fastq.gz
+    r2: reads/Brunharo_GULF_2_R2.fastq.gz
+  - name: L31_58
+    r1: reads/Brunharo_L31_58_R1.fastq.gz
+    r2: reads/Brunharo_L31_58_R2.fastq.gz
+  - name: L31_59
+    r1: reads/Brunharo_L31_59_R1.fastq.gz
+    r2: reads/Brunharo_L31_59_R2.fastq.gz
+  - name: L31_74
+    r1: reads/Brunharo_L31_74_R1.fastq.gz
+    r2: reads/Brunharo_L31_74_R2.fastq.gz
+  - name: L31_75
+    r1: reads/Brunharo_L31_75_R1.fastq.gz
+    r2: reads/Brunharo_L31_75_R2.fastq.gz
+  - name: L31_76
+    r1: reads/Brunharo_L31_76_R1.fastq.gz
+    r2: reads/Brunharo_L31_76_R2.fastq.gz
+  - name: L31_79
+    r1: reads/Brunharo_L31_79_R1.fastq.gz
+    r2: reads/Brunharo_L31_79_R2.fastq.gz
+  - name: L31_80
+    r1: reads/Brunharo_L31_80_R1.fastq.gz
+    r2: reads/Brunharo_L31_80_R2.fastq.gz
+  - name: L31_90
+    r1: reads/Brunharo_L31_90_R1.fastq.gz
+    r2: reads/Brunharo_L31_90_R2.fastq.gz
+  - name: L31_93
+    r1: reads/Brunharo_L31_93_R1.fastq.gz
+    r2: reads/Brunharo_L31_93_R2.fastq.gz
+  - name: GULF_21
+    r1: reads/Brunharo_GULF_21_R1.fastq.gz
+    r2: reads/Brunharo_GULF_21_R2.fastq.gz
+  - name: L46_100
+    r1: reads/Brunharo_L46_100_R1.fastq.gz
+    r2: reads/Brunharo_L46_100_R2.fastq.gz
+  - name: L46_33
+    r1: reads/Brunharo_L46_33_R1.fastq.gz
+    r2: reads/Brunharo_L46_33_R2.fastq.gz
+  - name: L46_36
+    r1: reads/Brunharo_L46_36_R1.fastq.gz
+    r2: reads/Brunharo_L46_36_R2.fastq.gz
+  - name: L46_39
+    r1: reads/Brunharo_L46_39_R1.fastq.gz
+    r2: reads/Brunharo_L46_39_R2.fastq.gz
+  - name: L46_47
+    r1: reads/Brunharo_L46_47_R1.fastq.gz
+    r2: reads/Brunharo_L46_47_R2.fastq.gz
+  - name: L46_5
+    r1: reads/Brunharo_L46_5_R1.fastq.gz
+    r2: reads/Brunharo_L46_5_R2.fastq.gz
+  - name: L46_53
+    r1: reads/Brunharo_L46_53_R1.fastq.gz
+    r2: reads/Brunharo_L46_53_R2.fastq.gz
+  - name: L46_54
+    r1: reads/Brunharo_L46_54_R1.fastq.gz
+    r2: reads/Brunharo_L46_54_R2.fastq.gz
+  - name: L46_55
+    r1: reads/Brunharo_L46_55_R1.fastq.gz
+    r2: reads/Brunharo_L46_55_R2.fastq.gz
+  - name: L46_59
+    r1: reads/Brunharo_L46_59_R1.fastq.gz
+    r2: reads/Brunharo_L46_59_R2.fastq.gz
+  - name: L46_68
+    r1: reads/Brunharo_L46_68_R1.fastq.gz
+    r2: reads/Brunharo_L46_68_R2.fastq.gz
+  - name: GULF_3
+    r1: reads/Brunharo_GULF_3_R1.fastq.gz
+    r2: reads/Brunharo_GULF_3_R2.fastq.gz
+  - name: L46_73
+    r1: reads/Brunharo_L46_73_R1.fastq.gz
+    r2: reads/Brunharo_L46_73_R2.fastq.gz
+  - name: L46_96
+    r1: reads/Brunharo_L46_96_R1.fastq.gz
+    r2: reads/Brunharo_L46_96_R2.fastq.gz
+  - name: L60_101
+    r1: reads/Brunharo_L60_101_R1.fastq.gz
+    r2: reads/Brunharo_L60_101_R2.fastq.gz
+  - name: L60_15
+    r1: reads/Brunharo_L60_15_R1.fastq.gz
+    r2: reads/Brunharo_L60_15_R2.fastq.gz
+  - name: L60_38
+    r1: reads/Brunharo_L60_38_R1.fastq.gz
+    r2: reads/Brunharo_L60_38_R2.fastq.gz
+  - name: L60_47
+    r1: reads/Brunharo_L60_47_R1.fastq.gz
+    r2: reads/Brunharo_L60_47_R2.fastq.gz
+  - name: GULF_34
+    r1: reads/Brunharo_GULF_34_R1.fastq.gz
+    r2: reads/Brunharo_GULF_34_R2.fastq.gz
+  - name: L60_58
+    r1: reads/Brunharo_L60_58_R1.fastq.gz
+    r2: reads/Brunharo_L60_58_R2.fastq.gz
+  - name: L60_6
+    r1: reads/Brunharo_L60_6_R1.fastq.gz
+    r2: reads/Brunharo_L60_6_R2.fastq.gz
+  - name: L60_63
+    r1: reads/Brunharo_L60_63_R1.fastq.gz
+    r2: reads/Brunharo_L60_63_R2.fastq.gz
+  - name: L60_64
+    r1: reads/Brunharo_L60_64_R1.fastq.gz
+    r2: reads/Brunharo_L60_64_R2.fastq.gz
+  - name: L60_70
+    r1: reads/Brunharo_L60_70_R1.fastq.gz
+    r2: reads/Brunharo_L60_70_R2.fastq.gz
+  - name: L60_73
+    r1: reads/Brunharo_L60_73_R1.fastq.gz
+    r2: reads/Brunharo_L60_73_R2.fastq.gz
+  - name: L60_76
+    r1: reads/Brunharo_L60_76_R1.fastq.gz
+    r2: reads/Brunharo_L60_76_R2.fastq.gz
+  - name: L60_91
+    r1: reads/Brunharo_L60_91_R1.fastq.gz
+    r2: reads/Brunharo_L60_91_R2.fastq.gz
+  - name: L60_96
+    r1: reads/Brunharo_L60_96_R1.fastq.gz
+    r2: reads/Brunharo_L60_96_R2.fastq.gz
+  - name: GULF_43
+    r1: reads/Brunharo_GULF_43_R1.fastq.gz
+    r2: reads/Brunharo_GULF_43_R2.fastq.gz
+  - name: GULF_45
+    r1: reads/Brunharo_GULF_45_R1.fastq.gz
+    r2: reads/Brunharo_GULF_45_R2.fastq.gz
+  - name: SLB_108
+    r1: reads/Brunharo_SLB_108_R1.fastq.gz
+    r2: reads/Brunharo_SLB_108_R2.fastq.gz
+  - name: SLB_12
+    r1: reads/Brunharo_SLB_12_R1.fastq.gz
+    r2: reads/Brunharo_SLB_12_R2.fastq.gz
+  - name: GULF_5
+    r1: reads/Brunharo_GULF_5_R1.fastq.gz
+    r2: reads/Brunharo_GULF_5_R2.fastq.gz
+  - name: SLB_14
+    r1: reads/Brunharo_SLB_14_R1.fastq.gz
+    r2: reads/Brunharo_SLB_14_R2.fastq.gz
+  - name: SLB_60
+    r1: reads/Brunharo_SLB_60_R1.fastq.gz
+    r2: reads/Brunharo_SLB_60_R2.fastq.gz
+  - name: SLB_79
+    r1: reads/Brunharo_SLB_79_R1.fastq.gz
+    r2: reads/Brunharo_SLB_79_R2.fastq.gz
+  - name: SLB_86
+    r1: reads/Brunharo_SLB_86_R1.fastq.gz
+    r2: reads/Brunharo_SLB_86_R2.fastq.gz
+  - name: SLB_92
+    r1: reads/Brunharo_SLB_92_R1.fastq.gz
+    r2: reads/Brunharo_SLB_92_R2.fastq.gz
