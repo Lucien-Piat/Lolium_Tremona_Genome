@@ -11,15 +11,15 @@ import numpy as np # type: ignore
 from Bio import SeqIO # type: ignore
 from Bio.Align import PairwiseAligner, substitution_matrices # type: ignore
 
-MAX_KS    = 3.2
-BIN_WIDTH = 0.04
+MAX_KS    = 1.5
+BIN_WIDTH = 0.02
 KAKS_BIN  = "KaKs_Calculator"
 
 INTER_COLOR = "#1976d2"
 INTRA_COLOR = "#9c27b0"
 
 SYN_BASE = "results/synteny"
-DATASETS = ["tremona", "rabiosa","paraquat", "perenne", "brachypodium, oryza"]
+DATASETS = ["tremona", "rabiosa", "sikem", "paraquat", "perenne", "brachypodium", "oryza"]
 OUTPUT   = "results/synteny/synteny_ks_all.pdf"
 
 CODON_TABLE = {
