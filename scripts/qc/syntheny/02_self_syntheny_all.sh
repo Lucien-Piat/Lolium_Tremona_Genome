@@ -15,6 +15,7 @@ run() { singularity exec --bind "${ROOT}":"${ROOT}" "${SIF}" "$@"; }
 DATASETS=(
   "tremona|reference_data/lmultiflorum.tremona.fa|reference_data/lmultiflorum.tremona.gene_annotation.gff|tr"
   "rabiosa|reference_data/lmultiflorum.rabiosa.fa|results/annotation/tremona_to_lmultiflorum.rabiosa.gff.gz|ra"
+  "sikem|reference_data/lmultiflorum.sikem.fasta|results/annotation/tremona_to_lmultiflorum.sikem.gff.gz|si"
   "paraquat|reference_data/lmultiflorum.paraquat.fasta|results/annotation/tremona_to_lmultiflorum.paraquat.gff.gz|pq"
   "perenne|reference_data/lmultiflorum.perenne.fa|results/annotation/tremona_to_lmultiflorum.perenne.gff.gz|pe"
   "brachypodium|reference_data/brachypodium.fna.gz|reference_data/brachypodium.gff.gz|bd"

@@ -6,7 +6,7 @@ run(){ singularity exec --bind "${ROOT}":"${ROOT}" "${SIF}" "$@"; }
 
 PROT="${ROOT}/results/orthology/proteomes"
 mkdir -p "${PROT}"
-for n in tremona rabiosa perenne paraquat brachypodium; do
+for n in tremona rabiosa sikem perenne paraquat brachypodium oryza; do
     cp "${ROOT}/results/synteny/${n}/proteins.faa" "${PROT}/${n}.faa"
 done
 
