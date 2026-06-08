@@ -126,7 +126,7 @@ samples:
     r2: reads/Brunharo_SLB_49_R2.fastq.gz
   - name: SLB_55
     r1: reads/Brunharo_SLB_55_R1.fastq.gz
-    r2: reads/Brunharo_SLB_55_R2.fastq.gz ###
+    r2: reads/Brunharo_SLB_55_R2.fastq.gz
   - name: GULF_6
     r1: reads/Brunharo_GULF_6_R1.fastq.gz
     r2: reads/Brunharo_GULF_6_R2.fastq.gz
