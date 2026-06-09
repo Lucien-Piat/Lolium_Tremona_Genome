@@ -1,28 +1,17 @@
-"""Cross-species sharing of self-synteny (duplication) blocks, via orthogroups.
-
-Views:
-1. Tremona-referenced (panels A, B, C, UpSet): each Tremona block scored
-   present/absent per species. Collapse-vs-real readout for Tremona.
-2. Symmetric consensus (panels D, E, networks F, G): blocks from ALL assemblies
-   pooled and clustered into consensus blocks by shared orthogroup pairs, each
-   with a Ks = median of member blocks (per-assembly blocks_ks.tsv from
-   synteny_ks_all.py).
-
-Colour code: red = Tremona-only, blue = shared within Lolium, green = with outgroups.
-In panel A the same colours are used, with a diverging layout: intra-chromosomal
-blocks above the zero line, inter-chromosomal blocks below it.
+"""
+Cross-species sharing of self-synteny (duplication) blocks, via orthogroups.
 """
 import argparse
 import os
 import re
 import sys
-from collections import Counter
 
 import matplotlib # type: ignore
 matplotlib.use("Agg") # type: ignore
 import matplotlib.pyplot as plt # type: ignore
 import matplotlib.transforms as mtransforms # type: ignore
-from matplotlib.patches import Patch # type: ignore
+from matplotlib.lines import Line2D # type: ignore
+from matplotlib.patches import Rectangle # type: ignore
 from matplotlib.ticker import FuncFormatter # type: ignore
 import numpy as np # type: ignore
 import pandas as pd # type: ignore
@@ -37,18 +26,17 @@ NET_ORDER = ["brachypodium", "oryza", "perenne", "tremona", "paraquat",
 
 HEAT_ROWS = ["perenne", "paraquat", "sikem", "rabiosa", "tremona"]
 HEAT_BIN  = 0.03
-NODE_SIZE = 1000          # fixed network node size (no longer encodes a value)
+NODE_SIZE = 650  
 
 BIN_WIDTH = 0.03
 HEADER_RE = re.compile(r"## Alignment\s+(\d+):.*?(\S+)&(\S+)\s+(plus|minus)")
 
-# clean display names; binomials are italicised via font style (not mathtext)
-# so that font weight (bold) still applies consistently, e.g. in the networks.
 DISPLAY = {
     "tremona": "Tremona", "rabiosa": "Rabiosa", "sikem": "Sikem",
     "paraquat": "Brunharo", "perenne": "L. perenne",
     "brachypodium": "B. distachyon", "oryza": "O. sativa ",
 }
+
 ITALIC = {"perenne", "brachypodium", "oryza"}
 def disp(sp):
     return DISPLAY.get(sp, sp)
@@ -59,17 +47,20 @@ CAT_ORDER = ["private", "lolium", "ancient"]
 CAT_LABEL = {"private": "Tremona-only",
              "lolium":  "Shared within Lolium only",
              "ancient": "Shared with outgroups"}
-CAT_COLOR = {"private": "#c62828", "lolium": "#1976d2", "ancient": "#2e7d32"}
-BUSCO_COLOR = "#ff7f0e"
+
+
+CAT_MARKER = {"private": "o", "lolium": "s", "ancient": "^"}
+CAT_COLOR = {"private": "#e4000bff", "lolium": "#1976d2", "ancient": "#2e7d32"}
+INTRA_COLOR = "#000000"
+INTER_COLOR = "#000000"
+BUSCO_COLOR = "#000000"
 
 plt.rcParams.update({
     "font.family": "DejaVu Sans", "font.size": 10, "axes.labelsize": 11,
     "axes.spines.top": False, "axes.spines.right": False,
     "legend.frameon": False, "legend.fontsize": 9,
+    "hatch.linewidth": 0.5,
 })
-
-
-
 
 def _net_color(sp):
     if sp == REFERENCE:
@@ -79,15 +70,20 @@ def _net_color(sp):
     return CAT_COLOR["lolium"]
 
 
+def _net_marker(sp):
+    if sp == REFERENCE:
+        return CAT_MARKER["private"]
+    if sp in OUTGROUPS:
+        return CAT_MARKER["ancient"]
+    return CAT_MARKER["lolium"]
+
+
 def _groups():
     outg = [s for s in OUTGROUPS if s in DATASETS]
     lol  = [s for s in DATASETS if s not in outg and s != REFERENCE]
     return outg, lol
 
 
-# ----------------------------------------------------------------------
-# loading
-# ----------------------------------------------------------------------
 def load_orthogroups(path):
     og_of = {}
     with open(path) as fh:
@@ -306,8 +302,8 @@ def _draw_collapse_hist(ax, df, xmax=1.2):
 
     intra = (df["q_chr"] == df["t_chr"])
 
-    top = np.zeros(len(centres))   # running height of the intra stack (positive)
-    bot = np.zeros(len(centres))   # running height of the inter stack (drawn negative)
+    top = np.zeros(len(centres))
+    bot = np.zeros(len(centres))
     for c in CAT_ORDER:
         col = CAT_COLOR[c]
         in_counts, _  = np.histogram(df.loc[(df["category"] == c) &  intra, "ks"].values, bins=bins)
@@ -322,29 +318,31 @@ def _draw_collapse_hist(ax, df, xmax=1.2):
     ax.axhline(0, color="#222", lw=0.8)
     ax.set_ylabel("Number\nof blocks")
     ax.set_xlim(0, xmax)
-    # show absolute counts on both halves of the y axis
     ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: str(int(abs(v)))))
-    # label which half is which
-    # Intra-chr annotations (Top)
-    ax.text(0.48, 0.95, "■", transform=ax.transAxes, ha="right", va="top",
-            fontsize=12, color="#9c27b0")
-    ax.text(0.49, 0.95, "Intra-chr", transform=ax.transAxes, ha="left", va="top",
+    # intra/inter key as hatch swatches, matching the panel B fill
+    sw_w, sw_h = 0.035, 0.13
+    ax.add_patch(Rectangle((0.48 - sw_w, 0.93 - sw_h), sw_w, sw_h,
+                           transform=ax.transAxes, facecolor="none",
+                           edgecolor=INTRA_COLOR, hatch="//", linewidth=0.0,
+                           clip_on=False))
+    ax.text(0.49, 0.90, "Intra-chr", transform=ax.transAxes, ha="left", va="top",
             fontsize=12, color="#555")
-
-    # Inter-chr annotations (Bottom)
-    ax.text(0.48, 0.05, "■", transform=ax.transAxes, ha="right", va="bottom",
-            fontsize=12, color="#1976d2")
-    ax.text(0.49, 0.05, "Inter-chr", transform=ax.transAxes, ha="left", va="bottom",
+    ax.add_patch(Rectangle((0.48 - sw_w, 0.08), sw_w, sw_h,
+                           transform=ax.transAxes, facecolor="none",
+                           edgecolor=INTER_COLOR, hatch="...", linewidth=0.0,
+                           clip_on=False))
+    ax.text(0.49, 0.1, "Inter-chr", transform=ax.transAxes, ha="left", va="bottom",
             fontsize=12, color="#555")
 
 
 def _draw_busco(ax, ks_tsv, busco_path, xmax=1.2, ks_split=0.2):
+    """
+    Cumulative fraction of Tremona duplicated BUSCOs covered by synteny blocks
+    """
     try:
         bt = pd.read_csv(ks_tsv, sep="\t")
     except Exception:
         bt = pd.DataFrame()
-    have_coords = {"q_chr", "q_start", "q_end", "t_chr", "t_start",
-                   "t_end", "median_ks"}.issubset(bt.columns)
     ax.set_ylabel("Tremona duplicated\nBUSCOs %", size='small')
     ax.set_xlim(0, xmax)
     ax.set_ylim(0, 100)
@@ -360,34 +358,89 @@ def _draw_busco(ax, ks_tsv, busco_path, xmax=1.2, ks_split=0.2):
     bins = np.arange(0, xmax + BIN_WIDTH, BIN_WIDTH)
     centres = (bins[:-1] + bins[1:]) / 2
     recs = bt.to_dict("records")
-    seen, cum = set(), []
+
+    # each BUSCO is assigned to exactly one group the first time it is covered
+    seen = set()
+    s_intra, s_inter = set(), set()
+    cum_intra, cum_inter = [], []
     for k in range(len(bins) - 1):
         lo, hi = bins[k], bins[k + 1]
+        hit_intra, hit_inter = set(), set()
         for r in recs:
             mk = r.get("median_ks", np.nan)
             if pd.isna(mk) or not (lo <= mk < hi):
                 continue
+            is_intra = (r.get("q_chr") == r.get("t_chr"))
+            ids = set()
             for chrom, s, e in ((r["q_chr"], r["q_start"], r["q_end"]),
                                 (r["t_chr"], r["t_start"], r["t_end"])):
                 if pd.isna(s) or s == -1:
                     continue
                 over = dup[(dup["Sequence"] == chrom) &
                            (dup["Gene_Start"] <= e) & (dup["Gene_End"] >= s)]
-                seen.update(over["Busco_id"].tolist())
-        cum.append(len(seen))
-    pct = (np.array(cum, dtype=float) / total * 100) if total else np.zeros(len(cum))
+                ids.update(over["Busco_id"].tolist())
+            if is_intra:
+                hit_intra |= ids
+            else:
+                hit_inter |= ids
 
-    ax.fill_between(centres, 0, pct, color=BUSCO_COLOR, alpha=0.2)
-    ax.plot(centres, pct, color=BUSCO_COLOR, lw=2)
+        new_intra = hit_intra - seen
+        s_intra |= new_intra
+        seen |= new_intra
+        new_inter = hit_inter - seen
+        s_inter |= new_inter
+        seen |= new_inter
+
+        cum_intra.append(len(s_intra))
+        cum_inter.append(len(s_inter))
+
+    cum_intra = np.array(cum_intra, dtype=float)
+    cum_inter = np.array(cum_inter, dtype=float)
+    if total:
+        pct_intra = cum_intra / total * 100.0
+        pct_inter = cum_inter / total * 100.0
+    else:
+        pct_intra = np.zeros(len(cum_intra))
+        pct_inter = np.zeros(len(cum_inter))
+
+    # ---- report duplicated-BUSCO counts before/after the old threshold ----
+    recent_idx = np.where(centres < ks_split)[0]
+    i_split = recent_idx[-1] if len(recent_idx) else -1
+    rec_intra = int(cum_intra[i_split]) if i_split >= 0 else 0
+    rec_inter = int(cum_inter[i_split]) if i_split >= 0 else 0
+    tot_intra = int(cum_intra[-1]) if len(cum_intra) else 0
+    tot_inter = int(cum_inter[-1]) if len(cum_inter) else 0
+    print(f"[info] duplicated BUSCOs covered by blocks "
+          f"(of {total} duplicated in the table):", file=sys.stderr)
+    print(f"[info]   recent (Ks < {ks_split}): {rec_intra + rec_inter} "
+          f"(intra {rec_intra}, inter {rec_inter})", file=sys.stderr)
+    print(f"[info]   old    (Ks >= {ks_split}): "
+          f"{(tot_intra - rec_intra) + (tot_inter - rec_inter)} "
+          f"(intra {tot_intra - rec_intra}, inter {tot_inter - rec_inter})", file=sys.stderr)
+    print(f"[info]   total covered: {tot_intra + tot_inter} "
+          f"(intra {tot_intra}, inter {tot_inter})", file=sys.stderr)
+
+    ax.fill_between(centres, 0, pct_intra, facecolor="none",
+                    hatch="//", edgecolor=INTRA_COLOR, linewidth=0.0)
+    ax.fill_between(centres, pct_intra, pct_intra + pct_inter,
+                    facecolor="none", hatch="..", edgecolor=INTER_COLOR,
+                    linewidth=0.0)
+    ax.plot(centres, pct_intra, color="#00000065", lw=0.4) # intra/inter boundary
+    ax.plot(centres, pct_intra + pct_inter, color=BUSCO_COLOR, lw=2)  # total coverage
     ax.axvline(ks_split, color="#222", ls="--", lw=1)
 
 
 def _draw_dot(ax, df, xmax=1.2):
     breadth = df[DATASETS].astype(int).sum(axis=1).values
     jitter  = (np.random.RandomState(0).rand(len(df)) - 0.5) * 0.3
-    ax.scatter(df["ks"].values, breadth + jitter,
-               c=[CAT_COLOR[c] for c in df["category"]],
-               s=18, alpha=0.8, edgecolor="none")
+    y = breadth + jitter
+    # one scatter per category so each gets its own marker (colourblind aid)
+    for c in CAT_ORDER:
+        m = (df["category"] == c).values
+        if not m.any():
+            continue
+        ax.scatter(df["ks"].values[m], y[m], marker=CAT_MARKER[c],
+                   c=CAT_COLOR[c], s=20, alpha=0.8, edgecolor="none")
     ax.set_ylabel("Species sharing")
     ax.set_xlim(0, xmax)
     ax.set_ylim(0.5, len(DATASETS) + 0.5)
@@ -397,7 +450,6 @@ def _draw_dot(ax, df, xmax=1.2):
 def _draw_consensus_heat(ax, df_con, mode, cmap_name, ylabel, xmax, ks_split):
     rows, M = _consensus_counts(df_con, mode, xmax)
 
-    # sort rows by their Sigma total, independently per panel (largest on top)
     order = np.argsort(M.sum(axis=1), kind="stable")
     rows = [rows[i] for i in order]
     M = M[order]
@@ -407,7 +459,7 @@ def _draw_consensus_heat(ax, df_con, mode, cmap_name, ylabel, xmax, ks_split):
     vmax = max(float(M.max()), 1.0)
 
     cm = matplotlib.colormaps[cmap_name].copy()
-    cm.set_bad("white")                       # 0 cells are pure white
+    cm.set_bad("white")
     Mm = np.ma.masked_where(M == 0, M)
     ax.imshow(Mm, aspect="auto", origin="lower", cmap=cm, vmin=0, vmax=vmax,
               extent=[0, xmax, 0, len(rows)])
@@ -422,7 +474,6 @@ def _draw_consensus_heat(ax, df_con, mode, cmap_name, ylabel, xmax, ks_split):
             ax.text((k + 0.5) * binw, j + 0.5, str(int(v)),
                     ha="center", va="center", fontsize=7, color=tc)
 
-    # row totals to the right (Sigma column)
     trans = mtransforms.blended_transform_factory(ax.transAxes, ax.transData)
     totals = M.sum(axis=1).astype(int)
     for j in range(len(rows)):
@@ -468,7 +519,8 @@ def _draw_network(ax, df_sub, title):
                     bbox=dict(boxstyle="round,pad=0.12", fc="white", ec="none", alpha=0.85))
         for sp in order:
             x, y = pos[sp]
-            ax.scatter(x, y, s=NODE_SIZE, color=_net_color(sp), zorder=3,
+            ax.scatter(x, y, s=NODE_SIZE, marker=_net_marker(sp),
+                       color=_net_color(sp), zorder=3,
                        edgecolor="white", linewidth=1.8)
         for sp in order:
             x, y = pos[sp]
@@ -478,63 +530,12 @@ def _draw_network(ax, df_sub, title):
             ax.text(x * 1.16, y * 1.16, disp(sp), ha=ha, va=va, fontsize=9,
                     fontweight="bold", fontstyle=disp_style(sp), color="#222")
 
-    ax.set_xlim(-1.75, 1.75)
-    ax.set_ylim(-1.6, 1.7)
-    ax.set_aspect("auto")
+    lim = 1.65
+    ax.set_xlim(-lim, lim)
+    ax.set_ylim(-lim, lim)
+    ax.set_aspect("equal", adjustable="datalim")   # round, fills and centres the cell
     ax.axis("off")
     ax.set_title(title, fontsize=12, fontweight="bold")
-
-
-# ----------------------------------------------------------------------
-# UpSet (Tremona-referenced)
-# ----------------------------------------------------------------------
-def fig_upset(df_sub, outpath, title):
-    if df_sub.empty:
-        print(f"[warn] no blocks for {title}", file=sys.stderr)
-        return
-    outg, _ = _groups()
-    sigs = Counter()
-    for _, row in df_sub.iterrows():
-        sig = tuple(s for s in DATASETS if row[s])
-        if sig:
-            sigs[sig] += 1
-    items = sorted(sigs.items(), key=lambda kv: -kv[1])
-    xs = np.arange(len(items))
-    bar_colors = ["#1976d2" if any(s in outg for s in sig) else "#9e9e9e"
-                  for sig, _ in items]
-
-    fig = plt.figure(figsize=(max(6, len(items) * 0.6), 5.5))
-    gs  = fig.add_gridspec(2, 1, height_ratios=[3, 2.2], hspace=0.05)
-    axb = fig.add_subplot(gs[0])
-    axm = fig.add_subplot(gs[1], sharex=axb)
-    axb.bar(xs, [c for _, c in items], color=bar_colors, width=0.7)
-    for x, (_, c) in zip(xs, items):
-        axb.text(x, c, str(c), ha="center", va="bottom", fontsize=9)
-    axb.set_ylabel("blocks")
-    axb.set_title(title)
-    axb.set_xticks([])
-    axb.legend(handles=[Patch(color="#1976d2", label="reaches an outgroup"),
-                        Patch(color="#9e9e9e", label="Lolium only")],
-               loc="upper right", fontsize=9)
-    for yi, sp in enumerate(DATASETS):
-        y = len(DATASETS) - 1 - yi
-        for x, (sig, _) in zip(xs, items):
-            axm.scatter(x, y, s=110, color=("#222" if sp in sig else "#e0e0e0"), zorder=3)
-    for x, (sig, _) in zip(xs, items):
-        ys = [len(DATASETS) - 1 - DATASETS.index(s) for s in sig]
-        if len(ys) > 1:
-            axm.plot([x, x], [min(ys), max(ys)], color="#222", lw=2, zorder=2)
-    axm.set_yticks(range(len(DATASETS)))
-    axm.set_yticklabels([disp(s) for s in DATASETS[::-1]], fontsize=10)
-    for t, s in zip(axm.get_yticklabels(), DATASETS[::-1]):
-        t.set_fontstyle(disp_style(s))
-    axm.set_xticks([])
-    axm.set_ylim(-0.5, len(DATASETS) - 0.5)
-    axm.spines["left"].set_visible(False)
-    axm.spines["bottom"].set_visible(False)
-    fig.savefig(outpath, bbox_inches="tight")
-    fig.savefig(outpath.replace(".pdf", ".png"), dpi=300, bbox_inches="tight")
-    plt.close(fig)
 
 
 # ----------------------------------------------------------------------
@@ -549,7 +550,7 @@ def fig_overview(df_ref, df_con, ks_split, outpath, ks_tsv, busco_path, xmax=1.2
     outer = fig.add_gridspec(1, 2, width_ratios=[1.5, 1.0], wspace=0.14)
     left  = outer[0].subgridspec(5, 1, height_ratios=[1.4, 0.7, 0.9, 0.55, 0.55],
                                  hspace=0.22)
-    right = outer[1].subgridspec(2, 1, hspace=0.04)
+    right = outer[1].subgridspec(2, 1, hspace=0.2)
 
     axA  = fig.add_subplot(left[0])
     axB  = fig.add_subplot(left[1], sharex=axA)   # BUSCO
@@ -569,7 +570,10 @@ def fig_overview(df_ref, df_con, ks_split, outpath, ks_tsv, busco_path, xmax=1.2
              va="top", ha="left", color="#555")
     axA.text(ks_split, axA.get_ylim()[1] * 0.98, "recent ", fontsize=8,
              va="top", ha="right", color="#555")
-    axA.legend(handles=[Patch(color=CAT_COLOR[c], label=CAT_LABEL[c])
+    # legend doubles as the colour + marker key for panels C, F and G
+    axA.legend(handles=[Line2D([0], [0], marker=CAT_MARKER[c], linestyle="none",
+                               markerfacecolor=CAT_COLOR[c], markeredgecolor="none",
+                               markersize=9, label=CAT_LABEL[c])
                         for c in CAT_ORDER], loc="upper right", fontsize=9)
 
     for ax in (axA, axB, axC, axDd):
@@ -578,8 +582,8 @@ def fig_overview(df_ref, df_con, ks_split, outpath, ks_tsv, busco_path, xmax=1.2
 
     axF = fig.add_subplot(right[0])
     axG = fig.add_subplot(right[1])
-    _draw_network(axF, recent, f"Recent  (Ks < {ks_split})")
-    _draw_network(axG, old,    f"Old  (Ks >= {ks_split})")
+    _draw_network(axF, recent, f"Recent  (Ks < {ks_split})\n")
+    _draw_network(axG, old,    f"Old  (Ks >= {ks_split})\n")
 
     for ax, L in [(axA, "A.        "), (axB, "B.        "), (axC, "C.       "),
                   (axDd, "D.        "), (axDm, "E.        "), (axF, "F."), (axG, "G.")]:
@@ -588,23 +592,6 @@ def fig_overview(df_ref, df_con, ks_split, outpath, ks_tsv, busco_path, xmax=1.2
     fig.savefig(outpath, bbox_inches="tight")
     fig.savefig(outpath.replace(".pdf", ".png"), dpi=300, bbox_inches="tight")
     plt.close(fig)
-
-
-def write_cytoscape(df, outdir):
-    with open(os.path.join(outdir, "cytoscape_edges.tsv"), "w") as e:
-        e.write("block\tspecies\n")
-        for bid, row in df.iterrows():
-            for sp in DATASETS:
-                if row[sp]:
-                    e.write(f"B{bid}\t{sp}\n")
-    with open(os.path.join(outdir, "cytoscape_nodes.tsv"), "w") as n:
-        n.write("node\ttype\tks\tbreadth\n")
-        for sp in DATASETS:
-            n.write(f"{sp}\tspecies\tNA\tNA\n")
-        for bid, row in df.iterrows():
-            breadth = int(sum(bool(row[sp]) for sp in DATASETS))
-            ks = row["ks"] if not pd.isna(row["ks"]) else float("nan")
-            n.write(f"B{bid}\tblock\t{ks:.4f}\t{breadth}\n")
 
 
 # ----------------------------------------------------------------------
@@ -629,16 +616,9 @@ def main(args):
     print(f"[info] Tremona categories: {n_priv} Tremona-only, {n_lol} Lolium-only, "
           f"{n_anc} reaching an outgroup", file=sys.stderr)
 
-    recent = df_ref[df_ref["ks"] <  args.ks_split]
-    old    = df_ref[df_ref["ks"] >= args.ks_split]
-    fig_upset(recent, os.path.join(args.outdir, "upset_recent.pdf"),
-              f"Recent blocks (Ks < {args.ks_split})")
-    fig_upset(old, os.path.join(args.outdir, "upset_old.pdf"),
-              f"Old blocks (Ks >= {args.ks_split})")
     fig_overview(df_ref, df_con, args.ks_split,
                  os.path.join(args.outdir, "dupshare_overview.pdf"),
                  args.ks_tsv, args.busco)
-    write_cytoscape(df_con, args.outdir)
     print(f"[info] done -> {args.outdir}", file=sys.stderr)
 
 

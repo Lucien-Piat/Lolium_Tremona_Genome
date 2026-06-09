@@ -1,3 +1,4 @@
+# synteny_ks_all.py  (Ka/Ks NG per block, all genomes, now also writes a TSV per assembly)
 import os
 import re
 import shutil
@@ -6,10 +7,10 @@ import sys
 import tempfile
 from collections import defaultdict
 
-import matplotlib.pyplot as plt # type: ignore
-import numpy as np # type: ignore
-from Bio import SeqIO # type: ignore
-from Bio.Align import PairwiseAligner, substitution_matrices # type: ignore
+import matplotlib.pyplot as plt  # type: ignore
+import numpy as np  # type: ignore
+from Bio import SeqIO  # type: ignore
+from Bio.Align import PairwiseAligner, substitution_matrices  # type: ignore
 
 MAX_KS    = 1.5
 BIN_WIDTH = 0.02
@@ -23,30 +24,16 @@ DATASETS = ["tremona", "rabiosa", "sikem", "paraquat", "perenne", "brachypodium"
 OUTPUT   = "results/synteny/synteny_ks_all.pdf"
 
 CODON_TABLE = {
-    'TCA': 'S', 'TCC': 'S', 'TCG': 'S', 'TCT': 'S',
-    'TTC': 'F', 'TTT': 'F',
-    'TTA': 'L', 'TTG': 'L',
-    'TAC': 'Y', 'TAT': 'Y',
-    'TAA': '*', 'TAG': '*',
-    'TGC': 'C', 'TGT': 'C',
-    'TGA': '*',
-    'TGG': 'W',
-    'CTA': 'L', 'CTC': 'L', 'CTG': 'L', 'CTT': 'L',
-    'CCA': 'P', 'CCC': 'P', 'CCG': 'P', 'CCT': 'P',
-    'CAC': 'H', 'CAT': 'H',
-    'CAA': 'Q', 'CAG': 'Q',
-    'CGA': 'R', 'CGC': 'R', 'CGG': 'R', 'CGT': 'R',
-    'ATA': 'I', 'ATC': 'I', 'ATT': 'I',
-    'ATG': 'M',
-    'ACA': 'T', 'ACC': 'T', 'ACG': 'T', 'ACT': 'T',
-    'AAC': 'N', 'AAT': 'N',
-    'AAA': 'K', 'AAG': 'K',
-    'AGC': 'S', 'AGT': 'S',
-    'AGA': 'R', 'AGG': 'R',
-    'GTA': 'V', 'GTC': 'V', 'GTG': 'V', 'GTT': 'V',
-    'GCA': 'A', 'GCC': 'A', 'GCG': 'A', 'GCT': 'A',
-    'GAC': 'D', 'GAT': 'D',
-    'GAA': 'E', 'GAG': 'E',
+    'TCA': 'S', 'TCC': 'S', 'TCG': 'S', 'TCT': 'S', 'TTC': 'F', 'TTT': 'F',
+    'TTA': 'L', 'TTG': 'L', 'TAC': 'Y', 'TAT': 'Y', 'TAA': '*', 'TAG': '*',
+    'TGC': 'C', 'TGT': 'C', 'TGA': '*', 'TGG': 'W', 'CTA': 'L', 'CTC': 'L',
+    'CTG': 'L', 'CTT': 'L', 'CCA': 'P', 'CCC': 'P', 'CCG': 'P', 'CCT': 'P',
+    'CAC': 'H', 'CAT': 'H', 'CAA': 'Q', 'CAG': 'Q', 'CGA': 'R', 'CGC': 'R',
+    'CGG': 'R', 'CGT': 'R', 'ATA': 'I', 'ATC': 'I', 'ATT': 'I', 'ATG': 'M',
+    'ACA': 'T', 'ACC': 'T', 'ACG': 'T', 'ACT': 'T', 'AAC': 'N', 'AAT': 'N',
+    'AAA': 'K', 'AAG': 'K', 'AGC': 'S', 'AGT': 'S', 'AGA': 'R', 'AGG': 'R',
+    'GTA': 'V', 'GTC': 'V', 'GTG': 'V', 'GTT': 'V', 'GCA': 'A', 'GCC': 'A',
+    'GCG': 'A', 'GCT': 'A', 'GAC': 'D', 'GAT': 'D', 'GAA': 'E', 'GAG': 'E',
     'GGA': 'G', 'GGC': 'G', 'GGG': 'G', 'GGT': 'G',
 }
 
@@ -77,7 +64,6 @@ def backtranslate(ap1, ap2, c1, c2):
 
 
 def parse_collinearity(path):
-    """Return [{id, q_chr, t_chr, pairs}]. q_chr/t_chr come from the header."""
     blocks, cur = [], None
     with open(path) as fh:
         for line in fh:
@@ -157,7 +143,7 @@ def parse_kaks_output(path, pair_info):
 
 
 def compute_genome(name, aligner, tmp_base):
-    """Return (inter_ks_list, intra_ks_list) of per-block median Ks."""
+    """Return a list of per-block records and write them to blocks_ks.tsv."""
     syn = os.path.join(SYN_BASE, name)
     cds_seqs, proteins = {}, {}
     for rec in SeqIO.parse(os.path.join(syn, "cds.fa"), "fasta"):
@@ -185,12 +171,21 @@ def compute_genome(name, aligner, tmp_base):
     for bid, ks in pairs:
         by_block[bid].append(ks)
 
-    inter, intra = [], []
+    records = []
     for bid, ks_list in by_block.items():
-        med = float(np.median(ks_list))
         qc, tc = block_chr.get(bid, ("?", "?"))
-        (intra if qc == tc else inter).append(med)
-    return inter, intra
+        records.append({"block_id": bid, "q_chr": qc, "t_chr": tc,
+                        "n_pairs": len(ks_list),
+                        "median_ks": float(np.median(ks_list))})
+
+    tsv = os.path.join(syn, "blocks_ks.tsv")
+    with open(tsv, "w") as fh:
+        fh.write("block_id\tq_chr\tt_chr\tn_pairs\tmedian_ks\n")
+        for r in sorted(records, key=lambda r: r["block_id"]):
+            fh.write(f"{r['block_id']}\t{r['q_chr']}\t{r['t_chr']}"
+                     f"\t{r['n_pairs']}\t{r['median_ks']:.4f}\n")
+    print(f"[info] wrote {tsv} ({len(records)} blocks)", file=sys.stderr)
+    return records
 
 
 def main():
@@ -208,14 +203,14 @@ def main():
         col = os.path.join(SYN_BASE, name, f"{name}.collinearity")
         cds = os.path.join(SYN_BASE, name, "cds.fa")
         if not (os.path.isfile(col) and os.path.isfile(cds)):
-            print(f"[warn] skipping {name}: missing collinearity or cds.fa",
-                  file=sys.stderr)
+            print(f"[warn] skipping {name}: missing collinearity or cds.fa", file=sys.stderr)
             continue
         print(f"[info] {name}", file=sys.stderr)
-        inter, intra = compute_genome(name, aligner, out_dir)
+        recs = compute_genome(name, aligner, out_dir)
+        inter = [r["median_ks"] for r in recs if r["q_chr"] != r["t_chr"]]
+        intra = [r["median_ks"] for r in recs if r["q_chr"] == r["t_chr"]]
         data[name] = (inter, intra)
-        print(f"[info]   {len(inter)} inter, {len(intra)} intra blocks",
-              file=sys.stderr)
+        print(f"[info]   {len(inter)} inter, {len(intra)} intra blocks", file=sys.stderr)
 
     if not data:
         sys.exit("[error] no genome produced results")
@@ -224,7 +219,6 @@ def main():
     centres = (bins[:-1] + bins[1:]) / 2
     bw = BIN_WIDTH * 0.95
 
-    # one shared y limit across all genomes
     hist, ymax = {}, 1
     for name, (inter, intra) in data.items():
         ic, _ = np.histogram(inter, bins=bins)
@@ -240,24 +234,20 @@ def main():
     })
 
     n = len(data)
-    fig, axes = plt.subplots(n, 1, figsize=(8.5, 1.9 * n + 0.5),
-                             sharex=True, sharey=True)
+    fig, axes = plt.subplots(n, 1, figsize=(8.5, 1.9 * n + 0.5), sharex=True, sharey=True)
     if n == 1:
         axes = [axes]
-
     for ax, (name, (inter, intra)) in zip(axes, data.items()):
         ic, ac = hist[name]
         ax.bar(centres, ic, width=bw, color=INTER_COLOR, edgecolor="white",
                linewidth=0.2, alpha=0.8, label=f"Inter (n = {len(inter)})")
-        ax.bar(centres, ac, width=bw, bottom=ic, color=INTRA_COLOR,
-               edgecolor="white", linewidth=0.2, alpha=0.8,
-               label=f"Intra (n = {len(intra)})")
+        ax.bar(centres, ac, width=bw, bottom=ic, color=INTRA_COLOR, edgecolor="white",
+               linewidth=0.2, alpha=0.8, label=f"Intra (n = {len(intra)})")
         ax.set_xlim(0, MAX_KS)
         ax.set_ylim(0, ymax)
         ax.text(0.01, 0.90, name, transform=ax.transAxes, ha="left", va="top",
                 fontsize=11, fontweight="bold")
         ax.legend(loc="upper right")
-
     axes[-1].set_xlabel("Median Ks per synteny block (NG86)")
     fig.supylabel("Number of synteny blocks")
     fig.tight_layout()
