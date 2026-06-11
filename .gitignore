@@ -15,3 +15,4 @@ reads/*
 .cache*
 __pycache__
 history.txt
+.vscode
