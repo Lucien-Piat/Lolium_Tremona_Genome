@@ -1,5 +1,4 @@
 #!/bin/bash
-# Run fastp sequentially on all paired reads in a folder.
 # Usage: sbatch 01_fastp.sh [raw_reads_dir]
 #SBATCH --job-name=fastp
 #SBATCH --ntasks=1
