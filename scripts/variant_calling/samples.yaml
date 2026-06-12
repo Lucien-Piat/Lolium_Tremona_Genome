@@ -34,6 +34,36 @@ samples:
   - name: TREM11
     r1: reads/TREM11_R1.fastq.gz
     r2: reads/TREM11_R2.fastq.gz
+  - name: CH1
+    r1: reads/CH1_R1.fastq.gz
+    r2: reads/CH1_R2.fastq.gz
+  - name: CH2
+    r1: reads/CH2_R1.fastq.gz
+    r2: reads/CH2_R2.fastq.gz
+  - name: CH3
+    r1: reads/CH3_R1.fastq.gz
+    r2: reads/CH3_R2.fastq.gz
+  - name: CH4
+    r1: reads/CH4_R1.fastq.gz
+    r2: reads/CH4_R2.fastq.gz
+  - name: CH5
+    r1: reads/CH5_R1.fastq.gz
+    r2: reads/CH5_R2.fastq.gz
+  - name: CH6
+    r1: reads/CH6_R1.fastq.gz
+    r2: reads/CH6_R2.fastq.gz
+  - name: CH7
+    r1: reads/CH7_R1.fastq.gz
+    r2: reads/CH7_R2.fastq.gz
+  - name: CH8
+    r1: reads/CH8_R1.fastq.gz
+    r2: reads/CH8_R2.fastq.gz  
+  - name: CH9
+    r1: reads/CH9_R1.fastq.gz
+    r2: reads/CH9_R2.fastq.gz
+  - name: CH10
+    r1: reads/CH10_R1.fastq.gz
+    r2: reads/CH10_R2.fastq.gz  
   - name: GULF_100
     r1: reads/Brunharo_GULF_100_R1.fastq.gz
     r2: reads/Brunharo_GULF_100_R2.fastq.gz
