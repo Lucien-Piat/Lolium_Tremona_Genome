@@ -16,3 +16,5 @@ reads/*
 __pycache__
 history.txt
 .vscode
+vcf/
+mapping/
