@@ -25,28 +25,24 @@ log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 PROCESSED=0
 SKIPPED=0
 
-for r1 in "${RAW_DIR}"/*_1.fastq.gz; do
+for r1 in "${RAW_DIR}"/*_R1.fastq.gz; do
     [[ -e "$r1" ]] || continue
-    SAMPLE=$(basename "$r1" _1.fastq.gz)
-    r2="${RAW_DIR}/${SAMPLE}_2.fastq.gz"
-
+    SAMPLE=$(basename "$r1" _R1.fastq.gz)
+    r2="${RAW_DIR}/${SAMPLE}_R2.fastq.gz"
     [[ -f "$r2" ]] || { log "[WARN] No R2 for $SAMPLE, skipping"; continue; }
-    [[ -f "${FILT_DIR}/${SAMPLE}_1.fastq.gz" ]] && { SKIPPED=$((SKIPPED + 1)); continue; }
-
+    [[ -f "${FILT_DIR}/${SAMPLE}_R1.fastq.gz" ]] && { SKIPPED=$((SKIPPED + 1)); continue; }
     log "[FASTP] $SAMPLE ($((PROCESSED + SKIPPED + 1)))"
-
     $RUN fastp \
         --in1 "$r1" \
         --in2 "$r2" \
-        --out1 "${FILT_DIR}/${SAMPLE}_1.fastq.gz" \
-        --out2 "${FILT_DIR}/${SAMPLE}_2.fastq.gz" \
+        --out1 "${FILT_DIR}/${SAMPLE}_R1.fastq.gz" \
+        --out2 "${FILT_DIR}/${SAMPLE}_R2.fastq.gz" \
         --detect_adapter_for_pe \
         --qualified_quality_phred 20 \
         --length_required 50 \
         --thread "$THREADS" \
         --json "${QC_DIR}/${SAMPLE}.fastp.json" \
         --html /dev/null
-
     PROCESSED=$((PROCESSED + 1))
     log "[OK] $SAMPLE"
 done
