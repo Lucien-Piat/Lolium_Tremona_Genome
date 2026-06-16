@@ -2,7 +2,7 @@ Bootstrap: docker
 From: mambaorg/micromamba:1.5.10
 
 %labels
-    Description Failed-collapse diagnostic : gatk4, bcftools, samtools, vcftools, mosdepth, bedtools, python
+    Description Failed-collapse diagnostic : gatk4, bcftools, samtools, vcftools, mosdepth, bedtools, python, pysam, seaborn
 
 %environment
     export PATH=/opt/conda/bin:$PATH
@@ -18,11 +18,11 @@ From: mambaorg/micromamba:1.5.10
         mosdepth=0.3.10 \
         bedtools=2.31.1 \
         python=3.11 \
-        pandas numpy matplotlib
+        pandas numpy matplotlib seaborn pysam
     micromamba clean -a -y
 
 %test
     gatk --version
     vcftools --version
     mosdepth --version
-    python -c "import pandas, numpy, matplotlib; print('python OK')"
+    python -c "import pandas, numpy, matplotlib, seaborn, pysam; print('python OK')"
