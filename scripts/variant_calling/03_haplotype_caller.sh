@@ -3,7 +3,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
 #SBATCH --mem-per-cpu=1500M
-#SBATCH --time=40:00:00
+#SBATCH --time=50:00:00
 #SBATCH --output=logs/03_hapcaller_%j.log
 
 # Carefull the mem / cpu is finetuned for Lmul Tremona (to the gigabate)
