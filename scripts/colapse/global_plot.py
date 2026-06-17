@@ -9,14 +9,14 @@ import re
 import subprocess
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
-import pysam
-import matplotlib
+import numpy as np # type: ignore
+import pandas as pd # type: ignore
+import pysam # type: ignore
+import matplotlib # type: ignore
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-from matplotlib.patches import Patch, Circle, Rectangle
-import seaborn as sns
+import matplotlib.pyplot as plt # type: ignore
+from matplotlib.patches import Patch, Circle, Rectangle # type: ignore
+import seaborn as sns # type: ignore
 
 plt.style.use("seaborn-v0_8-white")
 matplotlib.rcParams.update({"axes.spines.top": False, "axes.spines.right": False, "axes.grid": False})
@@ -473,7 +473,7 @@ def scatter_by_call(ax, master, x, y, vline, hline):
 def draw_decision_tree(ax, counts):
     old_par, arti, recent_par = counts
     ax.axis("off"); ax.set_xlim(0, 1); ax.set_ylim(0, 1)
-    ax.set_title("C. Decision tree", loc="left", fontweight="bold")
+    ax.set_title("C.", loc="left", fontweight="bold")
     def box(x, y, txt, color, leaf=False):
         ax.text(x, y, txt, ha="center", va="center", fontsize=9,
                 color="white" if leaf else "black", fontweight="medium",
@@ -545,7 +545,7 @@ def draw_upset_split(fig, gs_slot, master):
             ax_bar.text(i, val + global_max_y * 0.02, str(int(val)), 
                         ha='center', va='bottom', fontsize=8)
 
-        title = f"D. {call.capitalize()} signals" if idx == 0 else f"{call.capitalize()} signals"
+        title = f"D1." if idx == 0 else f"D2."
         ax_bar.set_title(title, loc="left", fontweight="bold", fontsize=10)
         
         for sp in ["top", "right", "bottom", "left"]: 
@@ -587,7 +587,7 @@ def draw_upset_split(fig, gs_slot, master):
             ax_mat.axhline(y_pos, color='#e0e0e0', lw=1, zorder=-1)
             
 def draw_busco_bar(ax, br):
-    ax.set_title("E. Complete BUSCO profile (before / after masking)", loc="left", fontweight="bold")
+    ax.set_title("E.", loc="left", fontweight="bold")
     if not br:
         ax.axis("off"); return
     
@@ -649,12 +649,12 @@ def fig_main(master, busco_res, outdir):
     ax = fig.add_subplot(gs[0, 0])
     scatter_by_call(ax, master, "median_ks", "depth_ratio_min", KS_SPLIT, ARTI_DEPTH)
     ax.set_xlabel("Median Ks"); ax.set_ylabel("Min depth / median")
-    ax.set_title("A. Ks vs depth", loc="left", fontweight="bold"); ax.legend(frameon=False, fontsize=8)
+    ax.set_title("A.", loc="left", fontweight="bold"); ax.legend(frameon=False, fontsize=8)
 
     ax = fig.add_subplot(gs[0, 1])
     scatter_by_call(ax, master, "median_ks", "samepos_frac", KS_SPLIT, ARTI_SAMEPOS)
     ax.set_xlabel("Median Ks"); ax.set_ylabel(SHARED_LABEL)
-    ax.set_title("B. Ks vs shared polymorphism", loc="left", fontweight="bold")
+    ax.set_title("B.", loc="left", fontweight="bold")
 
     draw_decision_tree(fig.add_subplot(gs[0, 2]), leaf_counts(master))
     draw_upset_split(fig, gs[1, 0], master)
@@ -674,25 +674,25 @@ def fig_supplementary(master, outdir):
                   alpha=0.7, edgecolor="white", lw=0.5, label=call)
     a.plot([0, 1.5], [0, 1.5], color="gray", ls="--", lw=1)
     a.set_xlabel("Depth q"); a.set_ylabel("Depth t")
-    a.set_title("Depth asymmetry (q vs t)", loc="left", fontweight="bold"); a.legend(frameon=False)
+    a.set_title("A.", loc="left", fontweight="bold"); a.legend(frameon=False)
 
     a = ax[0, 1]
     sns.boxplot(data=master, x="label_ks", y="snp_per_kb", hue="loc", hue_order=["intra", "inter"],
                 palette=LOC_PAL, ax=a, fliersize=3)
-    a.set_title("Genic SNP/kb", loc="left", fontweight="bold"); a.set_xlabel("")
+    a.set_title("B.", loc="left", fontweight="bold"); a.set_xlabel("")
 
     a = ax[1, 0]
     sub = master[master.get("samepos_either", 0) >= MIN_EITHER] if "samepos_either" in master else master
     sns.boxplot(data=sub, x="label_ks", y="samepos_frac", hue="loc", hue_order=["intra", "inter"],
                 palette=LOC_PAL, ax=a, fliersize=3)
-    a.set_title(SHARED_LABEL, loc="left", fontweight="bold"); a.set_xlabel(""); a.set_ylabel(SHARED_LABEL)
+    a.set_title("C.", loc="left", fontweight="bold"); a.set_xlabel(""); a.set_ylabel(SHARED_LABEL)
 
     a = ax[1, 1]
     if "category" in master:
         ct = pd.crosstab(master["final_call"], master["category"])
         ct.plot(kind="bar", stacked=True, ax=a,
                 color={"private": COL_DUP, "lolium": COL_FRAG, "ancient": COL_COMPLETE})
-        a.set_title("final_call vs dupshare category", loc="left", fontweight="bold")
+        a.set_title("D.", loc="left", fontweight="bold")
         a.set_xlabel(""); a.tick_params(axis="x", rotation=0)
     else:
         a.axis("off")
@@ -718,7 +718,7 @@ def fig_genome_landscape(master, winfis, windepth, masked, outdir, busco_loci=No
     bl = busco_loci if busco_loci is not None else load_busco_loci()
     
     fig = plt.figure(figsize=(16, 22.6))
-    outer = fig.add_gridspec(len(ch), 1, hspace=0.2)
+    outer = fig.add_gridspec(len(ch), 1, hspace=0.4)
 
     for i, chrom in enumerate(ch.index):
         clen = ch.loc[chrom, "len"] / 1e6
