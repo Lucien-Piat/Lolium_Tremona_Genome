@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import to_rgba
 
 DIST="results/te_hite/gene_te/te_gene_distance.tsv"
-OUT="results/te_hite/figures/gene_te.pdf"; NEAR=1000; ALPHA=0.85
+OUT="results/te_hite/figures/gene_te.pdf"; NEAR=2000; ALPHA=0.85
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 
 def category(c):
@@ -54,7 +54,7 @@ cols=[to_rgba(CCOL.get(c,"#999999"), ALPHA) for c in enr.index]
 axes[1].barh(range(len(enr)), enr.values, color=cols, edgecolor="black", linewidth=0.2)
 axes[1].axvline(0, color="k", lw=0.8)
 axes[1].set_yticks(range(len(enr))); axes[1].set_yticklabels(enr.index, fontsize=8)
-axes[1].set_xlabel("log2 enrichment within 1 kb of a gene")
+axes[1].set_xlabel("log2 enrichment within 2 kb of a gene")
 axes[1].set_title("Gene-proximal enrichment by class")
 for s in ("top","right"): axes[1].spines[s].set_visible(False)
 
