@@ -4,33 +4,29 @@ set -euo pipefail
 ROOT=$(pwd)
 SIF="${ROOT}/images/sif/QC.sif"
 LIB="${ROOT}/scripts/qc/circo_plot/lib"
-DATA="${ROOT}/results/crico_trem"
+DATA="${ROOT}/results/circo_trem"
 
 run() { singularity exec --bind "${ROOT}":"${ROOT}" "${SIF}" "$@"; }
 
 cd "${LIB}"
 
 COMMON_ARGS=(
-    --genome      "${DATA}/lmultiflorum.tremona.placed.fa"
-    --fai         "${DATA}/lmultiflorum.tremona.placed.fa.fai"
-    --gff         "${DATA}/tremona.gene_annotation.placed.gff"
-    --busco       "${DATA}/full_table_busco_format.tsv"
-    --synteny     "${DATA}/mcscanx/self_synteny_links.tsv"
+    --genome      "${ROOT}/reference_data/lmultiflorum.tremona.fa"
+    --fai         "${ROOT}/reference_data/lmultiflorum.tremona.fa.fai"
+    --gff         "${ROOT}/reference_data/lmultiflorum.tremona.gene_annotation.gff"
+    --busco       "${ROOT}/reference_data/lmultiflorum.tremona_full_table_busco_format.tsv"
+    --synteny     "${ROOT}/results/synteny/tremona/self_synteny_links.tsv"
     --numt        "${DATA}/numt_links.tsv"
     --nupt        "${DATA}/nupt_links.tsv"
     --mito-fasta  "${DATA}/lmul_tremona.mito.fasta"
     --pltd-fasta  "${DATA}/lmul_tremona.pltd.fasta"
     --mito-gb     "${DATA}/lmul_tremona.mito.gb"
     --pltd-gb     "${DATA}/lmul_tremona.pltd.gb"
-    --coverage    "${DATA}/"TREM*_circos_50000bp.txt
 )
 
-echo "[$(date)] Building FULL variant"
+echo "[$(date)] Building Circos plot with TE and SNP tracks"
 run python3 plot_circos.py "${COMMON_ARGS[@]}" \
-    --variant full \
-    --output "${DATA}/circos_full.pdf"
-
-echo "[$(date)] Building CLEAN variant"
-run python3 plot_circos.py "${COMMON_ARGS[@]}" \
-    --variant clean \
-    --output "${DATA}/circos_clean.pdf"
+    --te-gff      "${ROOT}/te_hite/tremona_TE.gff3" \
+    --te-mapping  "${ROOT}/results/te_hite/tremona_TE.family_table.tsv" \
+    --vcf         "${ROOT}/collapse_diag/cohort.snps.vcf.gz" \
+    --output      "${DATA}/circos_custom.pdf"
