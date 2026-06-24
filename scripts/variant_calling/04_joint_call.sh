@@ -1,63 +1,143 @@
 #!/bin/bash
-#SBATCH --job-name=joint_call
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=1
-#SBATCH --mem-per-cpu=32G
-#SBATCH --time=120:00:00
-#SBATCH --output=logs/04_joint_%j.log
 
 set -euo pipefail
+
+PROJECT=$(readlink -f .)
+N=100                      # number of shards (also the array size)
+CONC=40                    # max shards running at once (1 core / 20G each)
+OUTDIR="${PROJECT}/results/04_joint_calling"
+mkdir -p "${OUTDIR}" "${PROJECT}/logs"
+
+COMMON_EXPORT="ALL,PROJECT=${PROJECT},N=${N}"
+
+PREP_ID=$(sbatch --parsable \
+    --job-name=jc_prep \
+    --ntasks=1 --cpus-per-task=1 --mem-per-cpu=4G --time=00:30:00 \
+    --output="${PROJECT}/logs/04_prep_%j.log" \
+    --export="${COMMON_EXPORT}" <<'EOF'
+#!/bin/bash
+set -euo pipefail
+cd "${PROJECT}"
 SIF=$(readlink -f images/sif/varcall.sif)
 YAML=$(readlink -f reads/samples.yaml)
 GVCFDIR=$(readlink -f results/03_gvcf)
 OUTDIR="results/04_joint_calling"
 MAP="${OUTDIR}/sample_map.tsv"
-T=${SLURM_CPUS_PER_TASK:-1}
-BIND=$PWD
-run()    { singularity exec --bind "${BIND}" "${SIF}" "$@"; }
-run_sh() { singularity exec --bind "${BIND}" "${SIF}" bash -c "$@"; }
-mkdir -p "${OUTDIR}" logs
-WORKTMP="${OUTDIR}/tmp_${SLURM_JOB_ID:-$$}"
-mkdir -p "${WORKTMP}"
-trap 'rm -rf "${WORKTMP}"' EXIT
-DB="${WORKTMP}/genomicsdb"
+run() { singularity exec --bind "$PWD" "${SIF}" "$@"; }
 
 REF=$(readlink -f "$(run yq -r '.reference_genome' "${YAML}")")
 [[ -s "${REF}" && -s "${REF}.fai" && -s "${REF%.fa}.dict" ]] \
     || { echo "ERROR: reference, .fai ou .dict manquant" >&2; exit 1; }
 
-if [[ ! -s "${MAP}" ]]; then
-    for g in "${GVCFDIR}"/*.g.vcf.gz; do
-        s=$(basename "${g}" .g.vcf.gz)
-        printf "%s\t%s\n" "${s}" "$(readlink -f "${g}")"
-    done > "${MAP}"
-fi
-cut -f1 "${REF}.fai" > "${OUTDIR}/intervals.list"
-echo "Cohorte : $(wc -l < "${MAP}") echantillons, $(wc -l < "${OUTDIR}/intervals.list") chromosomes"
+# sample map
+for g in "${GVCFDIR}"/*.g.vcf.gz; do
+    s=$(basename "${g}" .g.vcf.gz)
+    printf "%s\t%s\n" "${s}" "$(readlink -f "${g}")"
+done > "${MAP}"
+echo "Cohorte : $(wc -l < "${MAP}") echantillons"
 
-# GenomicsDB 
-run gatk --java-options "-Xmx12G" GenomicsDBImport \
+# index sanity check (missing .tbi -> slow fallback or failure later)
+miss=0
+while read -r _ g; do [[ -s "${g}.tbi" ]] || { echo "index manquant: ${g}" >&2; miss=1; }; done < "${MAP}"
+[[ "${miss}" -eq 0 ]] || { echo "ERROR: des .tbi manquent" >&2; exit 1; }
+
+# N balanced shards (SplitIntervals subdivides big chromosomes by default)
+rm -rf "${OUTDIR}/scatter"
+run gatk SplitIntervals -R "${REF}" --scatter-count "${N}" -O "${OUTDIR}/scatter"
+echo "Shards crees : $(ls "${OUTDIR}/scatter"/*-scattered.interval_list | wc -l)"
+EOF
+)
+echo "prep   submitted : ${PREP_ID}"
+
+
+ARR_ID=$(sbatch --parsable \
+    --job-name=jc_shard \
+    --dependency=afterok:"${PREP_ID}" \
+    --array=0-$((N-1))%"${CONC}" \
+    --ntasks=1 --cpus-per-task=1 --mem-per-cpu=20G --time=24:00:00 \
+    --output="${PROJECT}/logs/04_shard_%A_%a.log" \
+    --export="${COMMON_EXPORT}" <<'EOF'
+#!/bin/bash
+set -euo pipefail
+cd "${PROJECT}"
+SIF=$(readlink -f images/sif/varcall.sif)
+YAML=$(readlink -f reads/samples.yaml)
+OUTDIR="results/04_joint_calling"
+MAP="${OUTDIR}/sample_map.tsv"
+T=${SLURM_CPUS_PER_TASK:-1}
+run() { singularity exec --bind "$PWD" "${SIF}" "$@"; }
+
+REF=$(readlink -f "$(run yq -r '.reference_genome' "${YAML}")")
+ID=$(printf "%04d" "${SLURM_ARRAY_TASK_ID}")
+IL="${OUTDIR}/scatter/${ID}-scattered.interval_list"
+[[ -s "${IL}" ]] || { echo "ERROR: ${IL} manquant" >&2; exit 1; }
+
+SHARD_OUT="${OUTDIR}/shards/${ID}"
+WORKTMP="${SHARD_OUT}/tmp"
+DB="${WORKTMP}/genomicsdb"
+mkdir -p "${SHARD_OUT}"
+rm -rf "${WORKTMP}"; mkdir -p "${WORKTMP}"
+trap 'rm -rf "${WORKTMP}"' EXIT
+
+# import (workspace must not pre-exist); heap 8G is plenty for a 22.5Mb region
+run gatk --java-options "-Xmx8G" GenomicsDBImport \
     --sample-name-map "${MAP}" \
     --genomicsdb-workspace-path "${DB}" \
-    -L "${OUTDIR}/intervals.list" \
+    -L "${IL}" \
     --merge-input-intervals \
     --batch-size 50 \
     --reader-threads "${T}" \
     --genomicsdb-shared-posixfs-optimizations true \
     --tmp-dir "${WORKTMP}"
 
-# 2. all-sites
-ALLSITES="${OUTDIR}/cohort_allsites.vcf.gz"
-run gatk --java-options "-Xmx18G" GenotypeGVCFs \
+# genotype, all-sites; heap 12G with ~8G left for GenomicsDB native memory
+run gatk --java-options "-Xmx12G" GenotypeGVCFs \
     -R "${REF}" \
     -V "gendb://${DB}" \
+    -L "${IL}" \
     --include-non-variant-sites \
-    -O "${ALLSITES}" \
+    -O "${SHARD_OUT}/allsites.vcf.gz" \
     --tmp-dir "${WORKTMP}"
+
+[[ -s "${SHARD_OUT}/allsites.vcf.gz" && -s "${SHARD_OUT}/allsites.vcf.gz.tbi" ]] \
+    || { echo "ERROR: shard ${ID} incomplet" >&2; exit 1; }
+echo "shard ${ID} OK : $(run bcftools index -n "${SHARD_OUT}/allsites.vcf.gz") sites"
+EOF
+)
+echo "shards submitted : ${ARR_ID}"
+
+# ---------------------------------------------------------------------------
+# 3. GATHER, depends on the whole array
+# ---------------------------------------------------------------------------
+GAT_ID=$(sbatch --parsable \
+    --job-name=jc_gather \
+    --dependency=afterok:"${ARR_ID}" \
+    --ntasks=1 --cpus-per-task=2 --mem-per-cpu=8G --time=08:00:00 \
+    --output="${PROJECT}/logs/04_gather_%j.log" \
+    --export="${COMMON_EXPORT}" <<'EOF'
+#!/bin/bash
+set -euo pipefail
+cd "${PROJECT}"
+SIF=$(readlink -f images/sif/varcall.sif)
+OUTDIR="results/04_joint_calling"
+run()    { singularity exec --bind "$PWD" "${SIF}" "$@"; }
+run_sh() { singularity exec --bind "$PWD" "${SIF}" bash -c "$@"; }
+
+# all expected shards present?
+got=$(ls "${OUTDIR}"/shards/*/allsites.vcf.gz 2>/dev/null | wc -l)
+[[ "${got}" -eq "${N}" ]] || { echo "ERROR: ${got}/${N} shards seulement" >&2; exit 1; }
+
+# concat in genomic order (shard names 0000..NNNN are already ordered)
+ls "${OUTDIR}"/shards/*/allsites.vcf.gz | sort > "${OUTDIR}/vcf.list"
+ALLSITES="${OUTDIR}/cohort_allsites.vcf.gz"
+run_sh "bcftools concat --threads 2 -f '${OUTDIR}/vcf.list' -Oz -o '${ALLSITES}'"
+# Faster alternative if headers match exactly (disjoint, ordered shards):
+#   run_sh "bcftools concat --naive -f '${OUTDIR}/vcf.list' -o '${ALLSITES}'"
+run bcftools index -t "${ALLSITES}"
 [[ -s "${ALLSITES}" && -s "${ALLSITES}.tbi" ]] \
     || { echo "ERROR: all-sites incomplet" >&2; exit 1; }
 
-# 3. variants-only filtre : SNPs, QUAL>20, QD>8 (Stritt et al. 2022)
+# variants-only : SNPs, QUAL>20, QD>8 (Stritt et al. 2022)
 SNPS="${OUTDIR}/cohort_snps_filtered.vcf.gz"
 run_sh "bcftools view -v snps '${ALLSITES}' \
         | bcftools filter -i 'QUAL>20 && INFO/QD>8' -Oz -o '${SNPS}'"
@@ -66,3 +146,9 @@ run bcftools stats "${SNPS}" > "${SNPS%.vcf.gz}.stats"
 
 echo "all-sites       : ${ALLSITES} ($(run bcftools index -n "${ALLSITES}") sites)"
 echo "variants filtre : ${SNPS} ($(run bcftools index -n "${SNPS}") SNPs)"
+EOF
+)
+echo "gather submitted : ${GAT_ID}"
+
+echo
+echo "Chaine : ${PREP_ID} -> ${ARR_ID} (array 0-$((N-1))%${CONC}) -> ${GAT_ID}"

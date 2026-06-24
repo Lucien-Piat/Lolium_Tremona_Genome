@@ -44,4 +44,15 @@ run bash -c "minimap2 -ax sr -t $((T-2)) -R '${RG}' '${MMI}' '${R1}' '${R2}' \
 run samtools index -@ "${T}" "${SAMPLE}.sorted.bam"
 run samtools flagstat -@ "${T}" "${SAMPLE}.sorted.bam" > "${SAMPLE}.flagstat.txt"
 
+MAPPED=$(awk '/ mapped \(/ {print $1; exit}' "${SAMPLE}.flagstat.txt")
+if run samtools quickcheck "${SAMPLE}.sorted.bam" \
+   && [[ -s "${SAMPLE}.sorted.bam" && -s "${SAMPLE}.sorted.bam.bai" ]] \
+   && [[ "${MAPPED:-0}" -gt 0 ]]; then
+    rm -f "${R1}" "${R2}"
+    echo "BAM complet (${MAPPED} reads mappes) : R1/R2 supprimes"
+else
+    echo "ERROR: BAM incomplet ou vide, R1/R2 conserves" >&2
+    exit 1
+fi
+
 echo "done"
