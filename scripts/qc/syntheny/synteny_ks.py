@@ -380,7 +380,7 @@ def main(args):
     secax.set_xlabel("Estimated divergence time (Mya)")
     ax1.set_ylabel("Number of synteny blocks")
     ax1.set_xlim(0, MAX_KS)
-    ax1.set_ylim(0, y_top)
+    ax1.set_ylim(0, 15)
     ax1.legend(loc="upper right")
 
     x_smooth = np.linspace(centres.min(), centres.max(), 300)
@@ -404,9 +404,9 @@ def main(args):
 
 
 if __name__ == "__main__":
-    D = "results/synteny/tremona"
+    D = "results/synteny/tremona_purged"
     p = argparse.ArgumentParser(description="Per-block Ks (NG) + BUSCO overlay, Tremona.")
-    p.add_argument("--collinearity", default=f"{D}/tremona.collinearity")
+    p.add_argument("--collinearity", default=f"{D}/tremona_purged.collinearity")
     p.add_argument("--cds",          default=f"{D}/cds.fa")
     p.add_argument("--gff",          default=f"{D}/annotation.gff3")
     p.add_argument("--busco",        default="reference_data/lmultiflorum.tremona_full_table_busco_format.tsv")

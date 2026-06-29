@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT=$(pwd)
 SIF="${ROOT}/images/sif/QC.sif"
 LIB="${ROOT}/scripts/qc/syntheny"
-SYN="${ROOT}/results/synteny/tremona"
+SYN="${ROOT}/results/synteny/tremona_purged"
 GENOME="${ROOT}/reference_data/lmultiflorum.tremona.fa"
 GFF="${SYN}/annotation.gff3"
 BUSCO="${ROOT}/reference_data/lmultiflorum.tremona_full_table_busco_format.tsv"
