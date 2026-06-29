@@ -3,8 +3,7 @@
 # Boilerplate
 set -euo pipefail
 SIF=$(readlink -f images/sif/annotation.sif)
-TARGET=$(readlink -f reference_data/lmultiflorum.tremona.full.fa)
-PLACED=$(readlink -f reference_data/lmultiflorum.tremona.placed.fa)
+TARGET=$(readlink -f reference_data/lmultiflorum.tremona.fa)
 BRUN_FA=$(readlink -f reference_data/LOLMU.fa)
 BRUN_GFF=$(readlink -f reference_data/LOLMU.genes.matched.gff)
 KYUSS_FA=$(readlink -f reference_data/kyuss_v2.fasta)
@@ -94,11 +93,6 @@ open('kyuss.unique.gff', 'w').writelines(keep_lines)
     }' kyuss.unique.gff
 } > tremona.merged.gff
 
-# placed-only version 
-run seqkit seq -n -i "${PLACED}" > placed.chroms.txt
-awk -F'\t' 'NR==FNR{a[$1]=1; next} /^#/ || a[$1]' \
-    placed.chroms.txt tremona.merged.gff > tremona.merged.placed.gff
-
 # Summary 
 echo "[$(date)] Summary:" | tee mapping_stats.txt
 {
@@ -108,14 +102,11 @@ echo "[$(date)] Summary:" | tee mapping_stats.txt
     N_KYUSS_MAP=$(awk -F'\t' '$3=="gene"' tremona.kyuss.gff | wc -l)
     N_KYUSS_KEPT=$(awk -F'\t' '$3=="gene"' kyuss.unique.gff | wc -l)
     N_MERGED=$(awk -F'\t' '$3=="gene"' tremona.merged.gff | wc -l)
-    N_PLACED=$(awk -F'\t' '$3=="gene"' tremona.merged.placed.gff | wc -l)
     echo "Brunharo: ${N_BRUN_MAP}/${N_BRUN_REF} lifted ($(awk "BEGIN{printf \"%.1f\", ${N_BRUN_MAP}/${N_BRUN_REF}*100}")%)"
     echo "Kyuss:    ${N_KYUSS_MAP}/${N_KYUSS_REF} lifted ($(awk "BEGIN{printf \"%.1f\", ${N_KYUSS_MAP}/${N_KYUSS_REF}*100}")%)"
     echo "Kyuss rescuing in regions Brunharo missed: ${N_KYUSS_KEPT}"
     echo "Merged total: ${N_MERGED} genes"
-    echo "On 7 placed chromosomes: ${N_PLACED} genes ($(awk "BEGIN{printf \"%.1f\", ${N_PLACED}/${N_MERGED}*100}")%)"
 } | tee -a mapping_stats.txt
 
-
 run pigz -p "${T}" tremona.brunharo.gff tremona.kyuss.gff kyuss.unique.gff
-rm -f brunharo.genes.bed kyuss.genes.bed kyuss.unique_gene_ids.txt placed.chroms.txt
+rm -f brunharo.genes.bed kyuss.genes.bed kyuss.unique_gene_ids.txt
