@@ -21,7 +21,7 @@ WINDOW    = 1_000_000
 ORG_WIN   = 2_000
 ORG_SEP   = 5000
 
-MIN_SYNTENY_GENES = 10
+MIN_SYNTENY_GENES = 0
 MIN_NUMT = 3000
 MIN_NUPT = 2000
 
@@ -138,8 +138,7 @@ def build_plot(args):
     te_mapping_dict = load_te_mapping(args.te_mapping) if args.te_mapping else {}
     tes = te_density(args.te_gff, nuc, te_mapping_dict, window=WINDOW) if args.te_gff else {}
     
-    snps = snp_density(args.vcf, nuc, window=WINDOW) if args.vcf else []
-
+    snps = snp_density(args.vcf, nuc, window=WINDOW) if args.vcf and args.vcf != "NA" else []
     synteny = load_self_synteny(args.synteny)
     numts = load_organelle_links(args.numt) if Path(args.numt).exists() else []
     nupts = load_organelle_links(args.nupt) if Path(args.nupt).exists() else []
@@ -234,7 +233,7 @@ def build_plot(args):
                         y = y_stack[fam]
                         te_total_tr.bar(x, y, bottom=bottom, width=widths,
                                         vmin=0, vmax=global_te_total_max + 1, 
-                                        fc=TE_COLORS[fam], ec="none")
+                                        fc=TE_COLORS[fam], ec="none", rasterized=True)
                         bottom += y
 
             # SNP density Track
@@ -329,11 +328,7 @@ def build_plot(args):
         )
 
     fig = circos.plotfig(figsize=(14, 14), dpi=150)
-    fig.savefig(args.output, bbox_inches="tight")
-    if args.output.endswith(".pdf"):
-        png = args.output[:-4] + ".png"
-        fig.savefig(png, bbox_inches="tight", dpi=200)
-        print(f"[info] wrote {png}", file=sys.stderr)
+    fig.savefig(args.output, bbox_inches="tight", dpi=450)
     print(f"[info] wrote {args.output}", file=sys.stderr)
 
 if __name__ == "__main__":

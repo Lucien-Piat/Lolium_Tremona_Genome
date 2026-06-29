@@ -3,68 +3,17 @@ set -euo pipefail
 
 ROOT=$(pwd)
 SIF="${ROOT}/images/sif/QC.sif"
-GENOME="${ROOT}/results/data_circo/lmultiflorum.tremona.placed.fa"
-GFF="${ROOT}/results/data_circo/tremona.gene_annotation.placed.gff"
+GENOME="${ROOT}/reference_data/lmultiflorum.tremona.fa"
 MITO="${ROOT}/results/data_circo/lmul_tremona.mito.fasta"
 PLTD="${ROOT}/results/data_circo/lmul_tremona.pltd.fasta"
 
-LIB="${ROOT}/scripts/qc/circo_plot/lib"
 DATA_DIR="${ROOT}/results/data_circo"
-OUTDIR="${DATA_DIR}/mcscanx"
-mkdir -p "${OUTDIR}"
+mkdir -p "${DATA_DIR}"
 
 T=4
-PREFIX="lm"
-NAME="tremona"
 
 run() { singularity exec --bind "${ROOT}":"${ROOT}" "${SIF}" "$@"; }
 
-cd "${OUTDIR}"
-
-# Stage 1: proteins + MCScanX gff
-if [ ! -s proteins.raw.faa ]; then
-    echo "[$(date)] gffread"
-    run gffread -y proteins.raw.faa -g "${GENOME}" "${GFF}"
-fi
-if [ ! -s proteins.faa ]; then
-    echo "[$(date)] clean proteins"
-    run python3 "${LIB}/clean_proteins.py" proteins.raw.faa proteins.faa
-fi
-if [ ! -s "${NAME}.gff" ]; then
-    echo "[$(date)] MCScanX gff"
-    run awk -v p="${PREFIX}" -F'\t' '
-        $3 == "mRNA" {
-            match($9, /ID=([^;]+)/, a)
-            chrom = $1; sub(/^chr/, p, chrom)
-            print chrom"\t"a[1]"\t"$4"\t"$5
-        }' "${GFF}" > "${NAME}.gff"
-fi
-
-# Stage 2: DIAMOND
-if [ ! -s proteins.db.dmnd ]; then
-    echo "[$(date)] diamond makedb"
-    run diamond makedb --in proteins.faa -d proteins.db --threads "${T}"
-fi
-if [ ! -s "${NAME}.blast" ]; then
-    echo "[$(date)] diamond blastp"
-    run diamond blastp \
-        -q proteins.faa -d proteins.db -o "${NAME}.blast" \
-        -e 1e-10 --outfmt 6 --max-target-seqs 5 --more-sensitive \
-        --block-size 1.5 --index-chunks 2 --threads "${T}"
-fi
-
-# Stage 3: MCScanX + links
-if [ ! -s "${NAME}.collinearity" ]; then
-    echo "[$(date)] MCScanX"
-    run MCScanX -s 5 -e 1e-10 -m 25 "${OUTDIR}/${NAME}"
-fi
-if [ ! -s self_synteny_links.tsv ]; then
-    echo "[$(date)] collinearity to links"
-    run python3 "${LIB}/collinearity_to_links.py" \
-        "${NAME}" "${PREFIX}" self_synteny_links.tsv
-fi
-
-# Stage 4: NUMT / NUPT
 cd "${DATA_DIR}"
 
 map_mito() {
@@ -86,7 +35,6 @@ map_mito() {
             }' OFS='\t' "${paf}" > "${links}"
     fi
 }
-
 
 map_pldt() {
     local org="$1" tag="$2" minlen="$3" minid="$4"
@@ -117,13 +65,8 @@ if [ ! -s organelle_insertion_links.tsv ]; then
 fi
 
 {
-    echo "===== self synteny ====="
-    echo "Blocks: $(tail -n +2 ${OUTDIR}/self_synteny_links.tsv | wc -l)"
-    tail -n +2 "${OUTDIR}/self_synteny_links.tsv" \
-        | awk '{print $1"\t"$4}' | sort | uniq -c | sort -rn | head -10
-    echo
     echo "===== NUMTs ====="; wc -l < numt_links.tsv
     echo "===== NUPTs ====="; wc -l < nupt_links.tsv
-} | tee synteny_stats.txt
+} | tee organelle_stats.txt
 
 echo "[$(date)] Done"
