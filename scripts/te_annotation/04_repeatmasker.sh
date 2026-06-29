@@ -2,11 +2,10 @@
 #SBATCH --job-name=te_rm
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
-#SBATCH --mem-per-cpu=512M
+#SBATCH --mem-per-cpu=712M
 #SBATCH --time=48:00:00
 #SBATCH --output=logs/05_04_rm_%j.log
 
-# RepeatMasker du genome avec la librairie HiTE fusionnee, un chromosome a la fois.
 # Usage : sbatch scripts/te_annotation/04_repeatmasker.sh <chr>
 
 set -euo pipefail

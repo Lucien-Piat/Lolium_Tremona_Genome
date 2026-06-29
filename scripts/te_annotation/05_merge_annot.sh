@@ -11,7 +11,7 @@
 set -euo pipefail
 SIF=$(readlink -f images/sif/hite.sif)
 ANNDIR=$(readlink -f results/te_hite/annotation)
-GENOME=$(readlink -f reference_data/lmultiflorum.tremona.primary.fa)
+GENOME=$(readlink -f reference_data/lmultiflorum.tremona.fa)
 OUTDIR="${ANNDIR}/merged"
 BIND=$PWD
 : "${TMPDIR:=/tmp}"
