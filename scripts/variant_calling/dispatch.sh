@@ -14,10 +14,10 @@ if [ -n "$MAIN_JOB_ID" ]; then
 fi
 
 JOB1=$(sbatch "${JOB1_ARGS[@]}" ./scripts/01_align.sh "$SAMPLE")
-echo "  -> Alignment submitted (Job ID: $JOB1)"
+echo "Alignment submitted (Job ID: $JOB1)"
 
 JOB2=$(sbatch --parsable --dependency=afterok:"$JOB1" ./scripts/02_markdup.sh "$SAMPLE")
-echo "  -> MarkDup submitted (Job ID: $JOB2)"
+echo "MarkDup submitted (Job ID: $JOB2)"
 
 JOB3=$(sbatch --parsable --dependency=afterok:"$JOB2" ./scripts/03_haplotype_caller.sh "$SAMPLE")
-echo "  -> HaplotypeCaller submitted (Job ID: $JOB3)"
+echo "HaplotypeCaller submitted (Job ID: $JOB3)"
