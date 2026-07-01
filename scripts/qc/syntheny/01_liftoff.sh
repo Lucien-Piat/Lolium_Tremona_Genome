@@ -4,7 +4,7 @@
 set -euo pipefail
 SIF=$(readlink -f images/sif/annotation.sif)
 REF_FA=$(readlink -f reference_data/lmultiflorum.tremona.fa)
-REF_GFF=$(readlink -f reference_data/lmultiflorum.tremona.gene_annotation.liftoff.gff)
+REF_GFF=$(readlink -f reference_data/lmultiflorum.tremona.gene_annotation.gff)
 OUTDIR="results/annotation/"
 T=4
 ROOT=$(pwd)
