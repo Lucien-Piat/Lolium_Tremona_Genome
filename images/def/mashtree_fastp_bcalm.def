@@ -18,6 +18,3 @@ From: condaforge/mambaforge:latest
 %environment
     export PATH="/opt/conda/bin:$PATH"
 
-%labels
-    Author Lucien Piat
-    Description fastp + BCALM2 + mashtree pipeline

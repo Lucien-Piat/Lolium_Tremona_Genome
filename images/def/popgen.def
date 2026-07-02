@@ -1,9 +1,6 @@
 Bootstrap: docker
 From: condaforge/miniforge3:latest
 
-%labels
-    Purpose popgen_mask_lolium
-
 %post
     export DEBIAN_FRONTEND=noninteractive
     mamba install -y -n base -c conda-forge -c bioconda \
@@ -13,9 +10,16 @@ From: condaforge/miniforge3:latest
         bcftools \
         samtools \
         htslib \
-        datamash
+        datamash \
+        bioconductor-snprelate \
+        bioconductor-lea \
+        r-tidyverse \
+        r-scales \
+        r-ggplot2 \
+        r-reshape2 \
+        r-magrittr
     mamba clean -a -y
-
+    
 %environment
     export LC_ALL=C
     export LANG=C

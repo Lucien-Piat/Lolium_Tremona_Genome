@@ -1,9 +1,6 @@
 Bootstrap: docker
 From: mambaorg/micromamba:1.5.10
 
-%labels
-    Description Failed-collapse diagnostic : gatk4, bcftools, samtools, vcftools, mosdepth, bedtools, python, pysam, seaborn
-
 %environment
     export PATH=/opt/conda/bin:$PATH
     export LC_ALL=C.UTF-8

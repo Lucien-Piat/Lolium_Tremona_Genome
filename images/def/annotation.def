@@ -1,11 +1,6 @@
 Bootstrap: docker
 From: condaforge/mambaforge:24.3.0-0
 
-%labels
-    Author Tremona team
-    Version 1.0
-    Description Liftoff annotation transfer plus merging utilities
-
 %post
     mamba install -y -c bioconda -c conda-forge \
         liftoff=1.6.3 \
