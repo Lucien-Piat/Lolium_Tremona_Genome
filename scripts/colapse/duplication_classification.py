@@ -22,7 +22,7 @@ plt.style.use("seaborn-v0_8-white")
 matplotlib.rcParams.update({"axes.spines.top": False, "axes.spines.right": False, "axes.grid": False})
 
 CONFIG = {
-    "vcf":   "collapse_diag/cohort.snps.vcf.gz",
+    "vcf":   "reference_data/cohort.snps.vcf.gz",
     "hwe":   "collapse_diag/trem.hwe",
     "bam":   "mapping/TREM1.dedup.bam",
     "ks":    "results/synteny/tremona/blocks_ks.tsv",
