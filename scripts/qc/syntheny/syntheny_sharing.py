@@ -55,10 +55,18 @@ INTRA_COLOR = "#000000"
 INTER_COLOR = "#000000"
 BUSCO_COLOR = "#000000"
 
+# Increased all base font sizes for readability from afar
 plt.rcParams.update({
-    "font.family": "DejaVu Sans", "font.size": 10, "axes.labelsize": 11,
-    "axes.spines.top": False, "axes.spines.right": False,
-    "legend.frameon": False, "legend.fontsize": 9,
+    "font.family": "DejaVu Sans", 
+    "font.size": 16, 
+    "axes.titlesize": 18,
+    "axes.labelsize": 16, 
+    "xtick.labelsize": 14,
+    "ytick.labelsize": 14,
+    "axes.spines.top": False, 
+    "axes.spines.right": False,
+    "legend.frameon": False, 
+    "legend.fontsize": 14,
     "hatch.linewidth": 0.5,
 })
 
@@ -290,7 +298,8 @@ def _consensus_counts(df, mode, xmax):
 # panel drawers
 # ----------------------------------------------------------------------
 def _panel_letter(ax, letter):
-    ax.text(-0.07, 1.08, letter, transform=ax.transAxes, fontsize=16,
+    # Increased panel letter size
+    ax.text(-0.07, 1.08, letter, transform=ax.transAxes, fontsize=24,
             fontweight="bold", va="bottom", ha="right")
 
 
@@ -319,20 +328,21 @@ def _draw_collapse_hist(ax, df, xmax=1.2):
     ax.set_ylabel("Number\nof blocks")
     ax.set_xlim(0, xmax)
     ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: str(int(abs(v)))))
-    # intra/inter key as hatch swatches, matching the panel B fill
+    
     sw_w, sw_h = 0.035, 0.13
     ax.add_patch(Rectangle((0.48 - sw_w, 0.93 - sw_h), sw_w, sw_h,
                            transform=ax.transAxes, facecolor="none",
                            edgecolor=INTRA_COLOR, hatch="//", linewidth=0.0,
                            clip_on=False))
-    ax.text(0.49, 0.90, "Intra-chr", transform=ax.transAxes, ha="left", va="top",
-            fontsize=12, color="#555")
+    # Increased font size for intra/inter legend text
+    ax.text(0.3, 0.90, "Intra-chr", transform=ax.transAxes, ha="left", va="top",
+            fontsize=16, color="#555")
     ax.add_patch(Rectangle((0.48 - sw_w, 0.08), sw_w, sw_h,
                            transform=ax.transAxes, facecolor="none",
                            edgecolor=INTER_COLOR, hatch="...", linewidth=0.0,
                            clip_on=False))
-    ax.text(0.49, 0.1, "Inter-chr", transform=ax.transAxes, ha="left", va="bottom",
-            fontsize=12, color="#555")
+    ax.text(0.3, 0.1, "Inter-chr", transform=ax.transAxes, ha="left", va="bottom",
+            fontsize=16, color="#555")
 
 
 def _draw_busco(ax, ks_tsv, busco_path, xmax=1.2, ks_split=0.2):
@@ -343,7 +353,7 @@ def _draw_busco(ax, ks_tsv, busco_path, xmax=1.2, ks_split=0.2):
         bt = pd.read_csv(ks_tsv, sep="\t")
     except Exception:
         bt = pd.DataFrame()
-    ax.set_ylabel("Tremona duplicated\nBUSCOs %", size='small')
+    ax.set_ylabel("Tremona duplicated\nBUSCOs %\n", size='medium')
     ax.set_xlim(0, xmax)
     ax.set_ylim(0, 100)
 
@@ -359,7 +369,6 @@ def _draw_busco(ax, ks_tsv, busco_path, xmax=1.2, ks_split=0.2):
     centres = (bins[:-1] + bins[1:]) / 2
     recs = bt.to_dict("records")
 
-    # each BUSCO is assigned to exactly one group the first time it is covered
     seen = set()
     s_intra, s_inter = set(), set()
     cum_intra, cum_inter = [], []
@@ -403,7 +412,6 @@ def _draw_busco(ax, ks_tsv, busco_path, xmax=1.2, ks_split=0.2):
         pct_intra = np.zeros(len(cum_intra))
         pct_inter = np.zeros(len(cum_inter))
 
-    # ---- report duplicated-BUSCO counts before/after the old threshold ----
     recent_idx = np.where(centres < ks_split)[0]
     i_split = recent_idx[-1] if len(recent_idx) else -1
     rec_intra = int(cum_intra[i_split]) if i_split >= 0 else 0
@@ -425,26 +433,9 @@ def _draw_busco(ax, ks_tsv, busco_path, xmax=1.2, ks_split=0.2):
     ax.fill_between(centres, pct_intra, pct_intra + pct_inter,
                     facecolor="none", hatch="..", edgecolor=INTER_COLOR,
                     linewidth=0.0)
-    ax.plot(centres, pct_intra, color="#00000065", lw=0.4) # intra/inter boundary
-    ax.plot(centres, pct_intra + pct_inter, color=BUSCO_COLOR, lw=2)  # total coverage
+    ax.plot(centres, pct_intra, color="#00000065", lw=0.4) 
+    ax.plot(centres, pct_intra + pct_inter, color=BUSCO_COLOR, lw=2)  
     ax.axvline(ks_split, color="#222", ls="--", lw=1)
-
-
-def _draw_dot(ax, df, xmax=1.2):
-    breadth = df[DATASETS].astype(int).sum(axis=1).values
-    jitter  = (np.random.RandomState(0).rand(len(df)) - 0.5) * 0.3
-    y = breadth + jitter
-    # one scatter per category so each gets its own marker (colourblind aid)
-    for c in CAT_ORDER:
-        m = (df["category"] == c).values
-        if not m.any():
-            continue
-        ax.scatter(df["ks"].values[m], y[m], marker=CAT_MARKER[c],
-                   c=CAT_COLOR[c], s=20, alpha=0.8, edgecolor="none")
-    ax.set_ylabel("Species sharing")
-    ax.set_xlim(0, xmax)
-    ax.set_ylim(0.5, len(DATASETS) + 0.5)
-    ax.set_yticks(range(1, len(DATASETS) + 1))
 
 
 def _draw_consensus_heat(ax, df_con, mode, cmap_name, ylabel, xmax, ks_split):
@@ -464,30 +455,32 @@ def _draw_consensus_heat(ax, df_con, mode, cmap_name, ylabel, xmax, ks_split):
     ax.imshow(Mm, aspect="auto", origin="lower", cmap=cm, vmin=0, vmax=vmax,
               extent=[0, xmax, 0, len(rows)])
 
-    # number in each non-empty cell
     for j in range(len(rows)):
         for k in range(nb):
             v = M[j, k]
             if v <= 0:
                 continue
             tc = "white" if v / vmax > 0.55 else "#222"
+            # Increased font size for heatmap cell counts
             ax.text((k + 0.5) * binw, j + 0.5, str(int(v)),
-                    ha="center", va="center", fontsize=7, color=tc)
+                    ha="center", va="center", fontsize=12, color=tc)
 
     trans = mtransforms.blended_transform_factory(ax.transAxes, ax.transData)
     totals = M.sum(axis=1).astype(int)
     for j in range(len(rows)):
+        # Increased font size for row totals
         ax.text(1.015, j + 0.5, str(int(totals[j])), transform=trans,
-                ha="left", va="center", fontsize=9, fontweight="bold",
+                ha="left", va="center", fontsize=14, fontweight="bold",
                 color="#222", clip_on=False)
+    # Increased font size for sigma
     ax.text(1.015, len(rows) + 0.12, "Σ", transform=trans, ha="left",
-            va="bottom", fontsize=10, fontweight="bold", color="#222", clip_on=False)
+            va="bottom", fontsize=16, fontweight="bold", color="#222", clip_on=False)
 
     ax.set_yticks(np.arange(len(rows)) + 0.5)
     ax.set_yticklabels([disp(r) for r in rows])
     for t, r in zip(ax.get_yticklabels(), rows):
         t.set_fontstyle(disp_style(r))
-    ax.set_ylabel(ylabel, size = "small")
+    ax.set_ylabel(ylabel, size="medium")
     ax.set_xlim(0, xmax)
     ax.axvline(ks_split, color="#222", ls="--", lw=1)
 
@@ -514,7 +507,8 @@ def _draw_network(ax, df_sub, title):
             if w == 0:
                 continue
             m = (pos[a] + pos[b]) / 2
-            ax.text(m[0], m[1], str(w), fontsize=7.5, ha="center", va="center",
+            # Increased font size for network edge weights
+            ax.text(m[0], m[1], str(w), fontsize=12, ha="center", va="center",
                     color="#333", zorder=4,
                     bbox=dict(boxstyle="round,pad=0.12", fc="white", ec="none", alpha=0.85))
         for sp in order:
@@ -527,15 +521,17 @@ def _draw_network(ax, df_sub, title):
             a = ang_of[sp]
             ha = "left" if np.cos(a) > 0.15 else ("right" if np.cos(a) < -0.15 else "center")
             va = "bottom" if np.sin(a) > 0.15 else ("top" if np.sin(a) < -0.15 else "center")
-            ax.text(x * 1.16, y * 1.16, disp(sp), ha=ha, va=va, fontsize=9,
+            # Increased font size for network species labels
+            ax.text(x * 1.16, y * 1.16, disp(sp), ha=ha, va=va, fontsize=14,
                     fontweight="bold", fontstyle=disp_style(sp), color="#222")
 
     lim = 1.65
     ax.set_xlim(-lim, lim)
     ax.set_ylim(-lim, lim)
-    ax.set_aspect("equal", adjustable="datalim")   # round, fills and centres the cell
+    ax.set_aspect("equal", adjustable="datalim")  
     ax.axis("off")
-    ax.set_title(title, fontsize=12, fontweight="bold")
+    # Increased network title size
+    ax.set_title(title, fontsize=18, fontweight="bold")
 
 
 # ----------------------------------------------------------------------
@@ -546,37 +542,44 @@ def fig_overview(df_ref, df_con, ks_split, outpath, ks_tsv, busco_path, xmax=1.2
     recent = df_con[df_con["ks"] <  ks_split]
     old    = df_con[df_con["ks"] >= ks_split]
 
-    fig = plt.figure(figsize=(16, 10))
+    fig = plt.figure(figsize=(17, 10))
     outer = fig.add_gridspec(1, 2, width_ratios=[1.5, 1.0], wspace=0.14)
-    left  = outer[0].subgridspec(5, 1, height_ratios=[1.4, 0.7, 0.9, 0.55, 0.55],
+    
+    # Removed the plot C ratio (was 0.9) to make the left column 4 plots
+    left  = outer[0].subgridspec(4, 1, height_ratios=[1.4, 0.7, 0.55, 0.55],
                                  hspace=0.22)
-    right = outer[1].subgridspec(2, 1, hspace=0.2)
+    right = outer[1].subgridspec(2, 1, hspace=0.4)
 
     axA  = fig.add_subplot(left[0])
     axB  = fig.add_subplot(left[1], sharex=axA)   # BUSCO
-    axC  = fig.add_subplot(left[2], sharex=axA)   # dots
-    axDd = fig.add_subplot(left[3], sharex=axA)   # duplicated heatmap
-    axDm = fig.add_subplot(left[4], sharex=axA)   # missing heatmap
+    axDd = fig.add_subplot(left[2], sharex=axA)   # duplicated heatmap
+    axDm = fig.add_subplot(left[3], sharex=axA)   # missing heatmap
 
     _draw_collapse_hist(axA, df_ref, xmax)
     _draw_busco(axB, ks_tsv, busco_path, xmax, ks_split)
-    _draw_dot(axC, df_ref, xmax)
-    _draw_consensus_heat(axDd, df_con, "dup", "Reds", "Lineage-specific", xmax, ks_split)
-    _draw_consensus_heat(axDm, df_con, "missing", "Greens", "Lost", xmax, ks_split)
+    
+    # Removed the call to `_draw_dot` for the C panel
+    
+    _draw_consensus_heat(axDd, df_con, "dup", "Reds", "", xmax, ks_split)
+    _draw_consensus_heat(axDm, df_con, "missing", "Greens", "", xmax, ks_split)
 
-    for ax in (axA, axC):
-        ax.axvline(ks_split, color="#222", ls="--", lw=1)
-    axA.text(ks_split, axA.get_ylim()[1] * 0.98, " old", fontsize=8,
+    # Added axline directly to axA (since axC is gone)
+    axA.axvline(ks_split, color="#222", ls="--", lw=1)
+    
+    # Increased text sizes for threshold labels
+    axA.text(ks_split, axA.get_ylim()[1] * 0.98, " old", fontsize=12,
              va="top", ha="left", color="#555")
-    axA.text(ks_split, axA.get_ylim()[1] * 0.98, "recent ", fontsize=8,
+    axA.text(ks_split, axA.get_ylim()[1] * 0.98, "recent ", fontsize=12,
              va="top", ha="right", color="#555")
-    # legend doubles as the colour + marker key for panels C, F and G
+             
+    # Increased legend marker size and label size handled by rcParams
     axA.legend(handles=[Line2D([0], [0], marker=CAT_MARKER[c], linestyle="none",
                                markerfacecolor=CAT_COLOR[c], markeredgecolor="none",
-                               markersize=9, label=CAT_LABEL[c])
-                        for c in CAT_ORDER], loc="upper right", fontsize=9)
+                               markersize=12, label=CAT_LABEL[c])
+                        for c in CAT_ORDER], loc="upper right", fontsize=14)
 
-    for ax in (axA, axB, axC, axDd):
+    # Tick params loop minus axC
+    for ax in (axA, axB, axDd):
         ax.tick_params(labelbottom=False)
     axDm.set_xlabel("Median Ks (NG86)")
 
@@ -585,8 +588,9 @@ def fig_overview(df_ref, df_con, ks_split, outpath, ks_tsv, busco_path, xmax=1.2
     _draw_network(axF, recent, f"Recent  (Ks < {ks_split})\n")
     _draw_network(axG, old,    f"Old  (Ks >= {ks_split})\n")
 
-    for ax, L in [(axA, "A.        "), (axB, "B.        "), (axC, "C.       "),
-                  (axDd, "D.        "), (axDm, "E.        "), (axF, "F."), (axG, "G.")]:
+    # Shifted lettering due to plot C removal
+    for ax, L in [(axA, "A.        "), (axB, "B.        "),
+                  (axDd, "C.        "), (axDm, "D.        "), (axF, "  E."), (axG, "  F.")]:
         _panel_letter(ax, L)
 
     fig.savefig(outpath, bbox_inches="tight")
@@ -628,8 +632,8 @@ if __name__ == "__main__":
     p.add_argument("--syn-base", default="results/synteny")
     p.add_argument("--ks-tsv", default="results/synteny/tremona/synteny_ks.tsv")
     p.add_argument("--busco",
-                   default="reference_data/lmultiflorum.tremona_full_table_busco_format.tsv")
-    p.add_argument("--outdir", default="results/dupshare")
+                   default="reference_data/lmultiflorum.tremona_full_table_busco_format.old.tsv")
+    p.add_argument("--outdir", default="results/dupshare2")
     p.add_argument("--reference", default="tremona")
     p.add_argument("--ks-split", type=float, default=0.2)
     p.add_argument("--min-shared", type=int, default=2)

@@ -3,6 +3,24 @@ import matplotlib.pyplot as plt # type: ignore
 import matplotlib.gridspec as gridspec # type: ignore
 import numpy as np # type: ignore
 from pycirclize import Circos # type: ignore
+import matplotlib # type: ignore
+
+# ==========================================
+# 0. Global Text & Size Styling
+# ==========================================
+plt.style.use("seaborn-v0_8-white")
+matplotlib.rcParams.update({
+    "axes.spines.top": False,
+    "axes.spines.right": False,
+    "axes.grid": False,
+    "font.size": 25,
+    "axes.titlesize": 24,
+    "axes.labelsize": 25,
+    "xtick.labelsize": 25,
+    "ytick.labelsize": 25,
+    "legend.fontsize": 25,
+    "figure.titlesize": 26
+})
 
 # ==========================================
 # 1. Configuration and Input Files
@@ -82,8 +100,10 @@ def build_circos_plot(ax, fai_path, synteny_path, busco_path, is_after=False, fa
     for sector in circos.sectors:
         chr_track = sector.add_track((92, 100))
         chr_color = CHR_COLORS.get(sector.name, "#757575") 
-        chr_track.axis(fc=chr_color, ec="black", lw=0.8)
-        chr_track.text(sector.name, r=105, size=10)
+        chr_track.axis(fc=chr_color, ec="black", lw=1.0)
+        
+        # Pushed r outwards to 112 to prevent large text from clipping the rings
+        chr_track.text(sector.name, r=112, size=25, fontweight="bold")
         
         if sector.name != 'Purged':
             band_track = sector.add_track((78, 90))
@@ -110,25 +130,29 @@ def plot_compact_busco(ax, busco_path, title_letter, show_legend=False):
     statuses = ["Complete", "Duplicated", "Fragmented", "Missing"]
     left = 0
     
+    # Thickness maintained as thick bars
+    bar_thickness = 0.8 
+    
     for status in statuses:
         val = pcts.get(status, 0)
         if val > 0:
             color = BUSCO_COLORS.get(status, "#757575")
-            ax.barh(0, val, left=left, height=0.4, color=color, edgecolor='white', label=status)
+            ax.barh(0, val, left=left, height=bar_thickness, color=color, edgecolor='white', lw=1.5, label=status)
             if status not in ["Fragmented"] and val >= 3.0:
-                ax.text(left + (val / 2), 0, f"{val:.1f}%", va='center', ha='center', color='white', fontweight='bold', fontsize=9)
+                ax.text(left + (val / 2), 0, f"{val:.1f}%", va='center', ha='center', color='white', fontweight='bold', fontsize=22)
             left += val
 
     ax.set_yticks([])
-    ax.set_ylim(-0.4, 0.4) 
+    ax.set_ylim(-0.5, 0.5)
     ax.set_xlim(0, 100)
-    ax.set_xlabel("BUSCOs (%)", fontsize=10, labelpad=2)
+    ax.set_xlabel("BUSCOs (%)", fontweight="medium", labelpad=10)
     ax.spines[['top', 'right', 'left']].set_visible(False)
-    ax.set_title(title_letter, loc="left", fontweight="bold", fontsize=14, pad=5)
+    
+    # Pad massively increased to create space between title (G./H.) and the bar
+    ax.set_title(title_letter, loc="left", fontweight="bold", pad=45)
     
     if show_legend:
-        # Adjusted anchor to drop neatly into the new spacer row
-        ax.legend(loc='upper center', bbox_to_anchor=(1.05, -1.0), ncol=4, frameon=False, fontsize=11, handlelength=1.5)
+        ax.legend(loc='upper center', bbox_to_anchor=(1.05, -1.2), ncol=4, frameon=False, handlelength=1.5)
 
 def plot_intra_inter_hist(ax, df, title_letter, bins, x_col, xlabel_text, show_legend=False):
     df_intra = df[df['link_type'] == 'Intra'][x_col]
@@ -137,26 +161,25 @@ def plot_intra_inter_hist(ax, df, title_letter, bins, x_col, xlabel_text, show_l
     ax.hist([df_intra, df_inter], bins=bins, stacked=True, 
             color=[SYNTENY_INTRA_SOLID, SYNTENY_INTER_SOLID], 
             label=['Intra-chromosomal', 'Inter-chromosomal'],
-            edgecolor='white', linewidth=0.3)
+            edgecolor='white', linewidth=1.0)
     
-    ax.set_xlabel(xlabel_text, fontsize=10, labelpad=2)
-    ax.set_ylabel("Blocks", fontsize=10)
+    ax.set_xlabel(xlabel_text, fontweight="medium", labelpad=10)
+    ax.set_ylabel("Blocks", fontweight="medium", labelpad=10)
     ax.spines[['top', 'right']].set_visible(False)
-    ax.set_title(title_letter, loc="left", fontweight="bold", fontsize=14, pad=5)
+    ax.set_title(title_letter, loc="left", fontweight="bold", pad=20)
     
     if show_legend:
-        ax.legend(loc='upper right', frameon=False, fontsize=11, handlelength=1.5)
+        ax.legend(loc='upper right', frameon=False, handlelength=1.5)
 
 # ==========================================
 # 3. Figure Layout and Rendering
 # ==========================================
 def main():
-    fig = plt.figure(figsize=(16, 16))
+    fig = plt.figure(figsize=(22, 28))
     
-    # GridSpec updated to 4 rows. 
-    # Index 2 (the 0.3 height ratio) acts as an invisible spacer for the BUSCO legend.
-    # We lowered hspace to 0.25 to bring the top plots closer together.
-    gs = gridspec.GridSpec(4, 2, height_ratios=[3.8, 0.3, 0.3, 1.2], hspace=0.25, wspace=0.1)
+    # Left and Right margins pushed to the edges (0.02 and 0.98) to force Circos full width.
+    # Wspace reduced to 0.1 to bring the columns closer.
+    gs = gridspec.GridSpec(4, 2, height_ratios=[4.5, 0.6, 0.4, 1.5], hspace=0.35, wspace=0.1, left=0.02, right=0.98)
     
     ax_circos_before = fig.add_subplot(gs[0, 0], polar=True)
     ax_circos_after  = fig.add_subplot(gs[0, 1], polar=True)
@@ -164,23 +187,23 @@ def main():
     ax_busco_before  = fig.add_subplot(gs[1, 0])
     ax_busco_after   = fig.add_subplot(gs[1, 1])
     
-    # We deliberately skip adding anything to gs[2, :] to leave room for the legend
+    # Spacer row for legend: gs[2, :]
     
     ax_hist_before   = fig.add_subplot(gs[3, 0])
     ax_hist_after    = fig.add_subplot(gs[3, 1])
     
-    # --- Row 1: Circos ---
+    # --- Row 1: Circos (E and F) ---
     build_circos_plot(ax_circos_before, FAI_BEFORE, SYNTENY_BEFORE, BUSCO_BEFORE)
-    ax_circos_before.set_title("a. Before ks-curation", loc="left", fontweight="bold", fontsize=16, pad=10)
+    ax_circos_before.set_title("E. Before ks-curation", loc="left", fontweight="bold", pad=30)
     
     build_circos_plot(ax_circos_after, FAI_AFTER, SYNTENY_AFTER, BUSCO_AFTER, is_after=True, fai_before_path=FAI_BEFORE)
-    ax_circos_after.set_title("b. After ks-curation", loc="left", fontweight="bold", fontsize=16, pad=10)
+    ax_circos_after.set_title("F. After ks-curation", loc="left", fontweight="bold", pad=30)
     
-    # --- Row 2: Compact BUSCO ---
-    plot_compact_busco(ax_busco_before, BUSCO_BEFORE, "c.", show_legend=True) # Legend only on C
-    plot_compact_busco(ax_busco_after, BUSCO_AFTER, "d.", show_legend=False)
+    # --- Row 2: Compact BUSCO (G and H) ---
+    plot_compact_busco(ax_busco_before, BUSCO_BEFORE, "G.", show_legend=True) 
+    plot_compact_busco(ax_busco_after, BUSCO_AFTER, "H.", show_legend=False)
     
-    # --- Row 4: Synteny (Intra vs Inter) ---
+    # --- Row 4: Synteny (Intra vs Inter) (I and J) ---
     df_b = parse_synteny(SYNTENY_BEFORE)
     df_a = parse_synteny(SYNTENY_AFTER)
     x_col = 'age_Mya' if 'age_Mya' in df_b.columns else 'median_ks'
@@ -189,8 +212,8 @@ def main():
     min_val, max_val = min(df_b[x_col].min(), df_a[x_col].min()), max(df_b[x_col].max(), df_a[x_col].max())
     bins = np.linspace(min_val, max_val, 40)
     
-    plot_intra_inter_hist(ax_hist_before, df_b, "e.", bins, x_col, xlabel, show_legend=True) # Legend only on E
-    plot_intra_inter_hist(ax_hist_after, df_a, "f.", bins, x_col, xlabel, show_legend=False)
+    plot_intra_inter_hist(ax_hist_before, df_b, "I.", bins, x_col, xlabel, show_legend=True) 
+    plot_intra_inter_hist(ax_hist_after, df_a, "J.", bins, x_col, xlabel, show_legend=False)
     
     # Sync Histogram Y-axes
     max_y = max(ax_hist_before.get_ylim()[1], ax_hist_after.get_ylim()[1])
@@ -199,7 +222,7 @@ def main():
 
     # Output
     plt.savefig("deduplication_summary.pdf", format="pdf", dpi=300, bbox_inches='tight')
-    plt.show()
+    print("Figure 'deduplication_summary.pdf' generated successfully.")
 
 if __name__ == "__main__":
     main()
