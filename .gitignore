@@ -10,7 +10,6 @@ compleasm_results
 assemblies
 PhaseGrass
 logs
-04c_*
 reads/*
 .cache*
 __pycache__
