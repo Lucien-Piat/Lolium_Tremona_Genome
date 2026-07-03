@@ -25,8 +25,11 @@ COMMON_ARGS=(
 )
 
 echo "[$(date)] Building Circos plot with TE and SNP tracks"
-run python3 plot_circos.py "${COMMON_ARGS[@]}" \
+run python3 plot_composite.py "${COMMON_ARGS[@]}" \
     --te-gff      "${ROOT}/results/te_hite/tremona_TE.gff3" \
     --te-mapping  "${ROOT}/results/te_hite/tremona_TE.family_table.tsv" \
     --vcf         "NA" \
-    --output      "${DATA}/circos_custom.pdf"
+    --dist        "${ROOT}/results/te_hite/gene_te/te_gene_distance.tsv" \
+    --classtab    "${ROOT}/results/te_hite/tremona_TE.class_table.tsv" \
+    --partition   "${ROOT}/results/te_hite/genome_partition.tsv" \
+    --output      "${DATA}/circos_composite.pdf"

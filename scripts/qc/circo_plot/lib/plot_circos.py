@@ -15,7 +15,7 @@ from tracks import (
     load_self_synteny, load_organelle_links, load_te_mapping, te_density, snp_density
 )
 
-ORG_SCALE = 200
+ORG_SCALE = 150
 GAP_MIN   = 10
 WINDOW    = 1_000_000
 ORG_WIN   = 2_000
@@ -31,14 +31,20 @@ NUC_PALETTE  = ["#1f77b4", "#ff7f0e", "#2ca02c", "#9467bd", "#8c564b", "#e377c2"
 MITO_COLOR   = "#8d6e63"
 PLTD_COLOR   = "#7cb342"
 
+TRACK_LABEL_SIZE = 10   # was 5.5
+CHR_NAME_SIZE    = 17   # was 11
+CHR_TICK_SIZE    = 11   # was 6
+
+START_GAP = 15
+
 BUSCO_COLORS = {
     "Complete":   "#2e7d32",
     "Duplicated": "#ef6c00",
 }
 
 # Synteny colors
-SYNTENY_INTER = "#1976d2"   
-SYNTENY_INTRA = "#9c27b0"   
+SYNTENY_INTER = "#1976d2"
+SYNTENY_INTRA = "#9c27b0"
 NUMT_COLOR  = "#c2185b"
 NUPT_COLOR  = "#558b2f"
 ORG_FEAT_COLORS = {"CDS": "#37474f", "tRNA": "#0288d1", "rRNA": "#c62828"}
@@ -100,7 +106,7 @@ def draw_organelle_ideogram(track, contigs, offsets):
         track.rect(off * ORG_SCALE, (off + clen) * ORG_SCALE,
                    fc=CONTIG_GRAYS[i % 2], ec="none")
 
-def build_plot(args):
+def build_plot(args, ax=None):
     print("[info] reading karyotype", file=sys.stderr)
     nuc = read_fai(args.fai)
     mito_contigs = organelle_lengths(args.mito_fasta)
@@ -137,7 +143,7 @@ def build_plot(args):
 
     te_mapping_dict = load_te_mapping(args.te_mapping) if args.te_mapping else {}
     tes = te_density(args.te_gff, nuc, te_mapping_dict, window=WINDOW) if args.te_gff else {}
-    
+
     snps = snp_density(args.vcf, nuc, window=WINDOW) if args.vcf and args.vcf != "NA" else []
     synteny = load_self_synteny(args.synteny)
     numts = load_organelle_links(args.numt) if Path(args.numt).exists() else []
@@ -158,21 +164,21 @@ def build_plot(args):
         all_snp_vals = [v for _, _, _, v in snps]
         if all_snp_vals:
             global_snp_max = np.percentile(all_snp_vals, 99)
-            global_snp_base = np.percentile(all_snp_vals, 25) 
-            
+            global_snp_base = np.percentile(all_snp_vals, 25)
+
     global_te_total_max = 10
     if tes:
         total_max_vals = []
-        for chrom, (x, widths, y_stack) in tes.items(): 
+        for chrom, (x, widths, y_stack) in tes.items():
             if y_stack:
                 total_cov = np.sum(list(y_stack.values()), axis=0)
                 total_max_vals.append(np.max(total_cov))
-                    
+
         if total_max_vals: global_te_total_max = max(10, np.max(total_max_vals))
 
     print("[info] building Circos", file=sys.stderr)
-    # Reduced the gap space to 6 degrees 
-    spaces = [3] * (len(sectors) - 1) + [6]
+
+    spaces = [3] * (len(sectors) - 1) + [START_GAP]
     circos = Circos(sectors, space=spaces)
 
     for sector in circos.sectors:
@@ -182,15 +188,16 @@ def build_plot(args):
         is_org  = is_mito or is_pltd
         sec_len = sectors[name]
 
-        # Explicit Labels (much smaller font: size=5.5)
+        # Explicit Labels (larger font: TRACK_LABEL_SIZE)
         if name == "chr1":
-            sector.text("Scaffolds                 ",       r=101.0, x=0, size=5.5, weight="bold", ha="right")
-            sector.text("Contigs                ",       r=96.5, x=0, size=5.5, weight="bold", ha="right")
-            sector.text("TEs             ",       r=89.0, x=0, size=5.5, weight="bold", ha="right")
-            sector.text("SNPs             ",      r=81.0, x=0, size=5.5, weight="bold", ha="right")
-            sector.text("Genes              ",     r=73.0, x=0, size=5.5, weight="bold", ha="right")
-            sector.text("GC%             ",       r=65.0, x=0, size=5.5, weight="bold", ha="right")
-            sector.text("BUSCO              ",     r=57.0, x=0, size=5.5, weight="bold", ha="right")
+            lbl = dict(x=0, size=TRACK_LABEL_SIZE, weight="bold", ha="right")
+            sector.text("Scaffolds          ", r=101.0, **lbl)
+            sector.text("Contigs         ",     r=96.5,  **lbl)
+            sector.text("TEs        ",          r=89.0,  **lbl)
+            sector.text("SNPs        ",         r=81.0,  **lbl)
+            sector.text("Genes         ",       r=73.0,  **lbl)
+            sector.text("GC%        ",          r=65.0,  **lbl)
+            sector.text("BUSCO         ",       r=57.0,  **lbl)
 
         # Chromosome color band with LAST TICK ONLY
         color_tr = sector.add_track((100, 103))
@@ -198,10 +205,10 @@ def build_plot(args):
         if not is_org:
             # Place exactly one tick at sec_len (Compatibility fix for older pycirclize)
             color_tr.xticks(
-                [sec_len], 
-                tick_length=2, 
-                label_size=6, 
-                label_orientation="vertical", 
+                [sec_len],
+                tick_length=3,
+                label_size=CHR_TICK_SIZE,
+                label_orientation="vertical",
                 labels=[f"{sec_len/1_000_000:.0f}M"]
             )
 
@@ -215,7 +222,7 @@ def build_plot(args):
         else:
             draw_nuclear_ideogram(ideo_tr, name, sec_len, gaps)
 
-        sector.text(name, r=109, size=11, weight="bold")
+        sector.text(name, r=112, size=CHR_NAME_SIZE, weight="bold")
 
         # Inner tracks mapping
         if is_org:
@@ -226,16 +233,22 @@ def build_plot(args):
             te_total_tr = sector.add_track((86, 92))
             te_total_tr.axis(fc="white", ec="black", lw=0.2)
             if name in tes:
-                x, widths, y_stack = tes[name] 
-                bottom = np.zeros(len(x))
+                x, widths, y_stack = tes[name]
+                x = np.asarray(x, dtype=float)
+                # anchor first/last points to the sector ends
+                x_pad = np.concatenate(([0.0], x, [sec_len]))
+                bottom = np.zeros(len(x_pad))
                 for fam in TE_STACK_ORDER:
                     if fam in y_stack:
-                        y = y_stack[fam]
-                        te_total_tr.bar(x, y, bottom=bottom, width=widths,
-                                        vmin=0, vmax=global_te_total_max + 1, 
-                                        fc=TE_COLORS[fam], ec="none", rasterized=True)
-                        bottom += y
-
+                        y = np.asarray(y_stack[fam], dtype=float)
+                        y_pad = np.concatenate(([y[0]], y, [y[-1]]))
+                        top = bottom + y_pad
+                        te_total_tr.fill_between(
+                            x_pad, top, y2=bottom,
+                            vmin=0, vmax=global_te_total_max + 1,
+                            fc=TE_COLORS[fam], ec="none", alpha=1.0,
+                        )
+                        bottom = top
             # SNP density Track
             snp_tr = sector.add_track((78, 84))
             snp_tr.axis(fc="#f5f5f5", ec="black", lw=0.2)
@@ -244,18 +257,18 @@ def build_plot(args):
                 if c_snps:
                     x = np.array([(s + e) / 2 for s, e, _ in c_snps])
                     y = np.array([v for _, _, v in c_snps])
-                    
+
                     y_clipped = np.clip(y, 0, global_snp_max)
                     y_above   = np.maximum(y_clipped, global_snp_base)
                     y_below   = np.minimum(y_clipped, global_snp_base)
                     y_base    = np.full_like(y_clipped, global_snp_base)
-                    
+
                     snp_tr.fill_between(x, y_above, y2=y_base,
                                         vmin=0, vmax=global_snp_max,
                                         fc="#ff8a80", alpha=0.8)
                     snp_tr.fill_between(x, y_below, y2=y_base,
                                         vmin=0, vmax=global_snp_max,
-                                        fc="#81d4fa", alpha=0.8) 
+                                        fc="#81d4fa", alpha=0.8)
                     snp_tr.line(x, y_clipped, vmin=0, vmax=global_snp_max,
                                 color="black", lw=0.3)
                     snp_tr.line(x, y_base, vmin=0, vmax=global_snp_max,
@@ -275,7 +288,7 @@ def build_plot(args):
             if cgc:
                 x = np.array([(s + e) / 2 for s, e, _ in cgc])
                 y = np.array([v for _, _, v in cgc])
-                
+
                 if len(x):
                     y_clipped = np.clip(y, GC_VMIN, GC_VMAX)
                     y_above   = np.maximum(y_clipped, GC_BASELINE)
@@ -327,9 +340,15 @@ def build_plot(args):
             color=NUPT_COLOR, alpha=0.6, lw=0.5,
         )
 
+    # When an axis is supplied, draw onto it (composite figure) and return.
+    if ax is not None:
+        circos.plotfig(ax=ax)
+        return circos
+
     fig = circos.plotfig(figsize=(14, 14), dpi=150)
     fig.savefig(args.output, bbox_inches="tight", dpi=450)
     print(f"[info] wrote {args.output}", file=sys.stderr)
+    return fig
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
