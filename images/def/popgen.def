@@ -4,6 +4,8 @@ From: condaforge/miniforge3:latest
 %post
     export DEBIAN_FRONTEND=noninteractive
     mamba install -y -n base -c conda-forge -c bioconda \
+        pixy \
+        vcftools \
         genmap \
         mosdepth \
         bedtools \
