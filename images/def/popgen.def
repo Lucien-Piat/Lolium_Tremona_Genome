@@ -5,6 +5,7 @@ From: condaforge/miniforge3:latest
     export DEBIAN_FRONTEND=noninteractive
     mamba install -y -n base -c conda-forge -c bioconda \
         pixy \
+        plink2 \
         vcftools \
         genmap \
         mosdepth \
