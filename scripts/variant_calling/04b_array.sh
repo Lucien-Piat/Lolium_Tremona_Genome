@@ -9,7 +9,6 @@
 
 # Step 2: import + genotype one shard per array task.
 # Run AFTER prep: sbatch scripts/04b_shards.sh
-
 set -euo pipefail
 cd "$(readlink -f .)"
 SIF=$(readlink -f images/sif/varcall.sif)

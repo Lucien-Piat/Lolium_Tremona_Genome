@@ -7,10 +7,10 @@
 #SBATCH --output=logs/04_gather_%j.log
 
 # Step 3: concat shards -> all-sites, filter -> SNPs, verify, free shards.
-
+# Run AFTER the shard array: N=200 sbatch scripts/04c_gather.sh
 set -euo pipefail
 cd "$(readlink -f .)"
-N=${N:-100}
+N=${N:-200}
 SIF=$(readlink -f images/sif/varcall.sif)
 OUTDIR="results/04_joint_calling"
 run()    { singularity exec --bind "$PWD" "${SIF}" "$@"; }
@@ -28,7 +28,8 @@ if ! run_sh "bcftools concat --naive-force -f '${OUTDIR}/vcf.list' -o '${ALLSITE
     run_sh "bcftools concat --threads 2 -f '${OUTDIR}/vcf.list' -Oz -o '${ALLSITES}'"
 fi
 run bcftools index -t "${ALLSITES}"
-N_ALL=$(run bcftools index -n "${ALLSITES}")
+
+N_ALL=$(run bcftools index -s "${ALLSITES}" | awk '{s+=$3} END{print s+0}')
 echo "all-sites       : ${ALLSITES} (${N_ALL} sites)"
 
 # variants-only : SNPs, QUAL>20, QD>8 (Stritt et al. 2022)

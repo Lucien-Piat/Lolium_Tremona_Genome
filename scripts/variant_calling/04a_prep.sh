@@ -8,7 +8,7 @@
 
 set -euo pipefail
 cd "$(readlink -f .)"
-N=${N:-100}
+N=${N:-200}
 SIF=$(readlink -f images/sif/varcall.sif)
 YAML=$(readlink -f reads/samples.yaml)
 GVCFDIR=$(readlink -f results/03_gvcf)
