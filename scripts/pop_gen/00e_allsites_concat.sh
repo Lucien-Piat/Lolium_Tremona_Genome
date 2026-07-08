@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=concat_as
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=3
 #SBATCH --mem-per-cpu=2G
 #SBATCH --time=03:00:00
 #SBATCH --output=logs/filter_%x_%j.log
@@ -26,12 +26,11 @@ while read -r chr _; do
 done < "${FAI}"
 [ "${MISSING}" -eq 0 ] || { echo "ERREUR: morceaux manquants, concat annulee." >&2; exit 1; }
 
-LIST=$(cut -f1 "${FAI}" | sed "s|^|${TMP}/|; s|\$|.hc.vcf.gz|")
+cut -f1 "${FAI}" | sed "s|^|${TMP}/|; s|\$|.hc.vcf.gz|" > "${TMP}/concat_list.txt"
 
-run bash -c "bcftools concat --threads ${T} -Oz -o '${OUT}/allsites.hc.vcf.gz' ${LIST}"
+run bash -c "set -o pipefail; \
+    bcftools concat -f '${TMP}/concat_list.txt' --threads ${T} \
+        -Oz -o '${OUT}/allsites.hc.vcf.gz'"
 run tabix -p vcf "${OUT}/allsites.hc.vcf.gz"
 
 N=$(run bash -c "bcftools index -n '${OUT}/allsites.hc.vcf.gz'")
-echo "[$(date)] termine. Sites : ${N} -> ${OUT}/allsites.hc.vcf.gz"
-
-# rm -rf "${TMP}"
