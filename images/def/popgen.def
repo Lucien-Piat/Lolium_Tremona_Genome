@@ -14,13 +14,16 @@ From: condaforge/miniforge3:latest
         samtools \
         htslib \
         datamash \
+        poplddecay \
         bioconductor-snprelate \
         bioconductor-lea \
         r-tidyverse \
         r-scales \
         r-ggplot2 \
         r-reshape2 \
-        r-magrittr
+        r-magrittr \
+        r-hierfstat \
+        r-ape
     mamba clean -a -y
     
 %environment
