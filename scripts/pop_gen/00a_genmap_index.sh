@@ -19,8 +19,6 @@ mkdir -p "${APPTAINER_HOME}" results/mask logs
 run() { singularity exec --home "${APPTAINER_HOME}" --bind "${BIND}" "${SIF}" "$@"; }
 
 GB=$(awk '{s+=$2} END{printf "%.2f", s/1e9}' "${GENOME}.fai")
-echo "[$(date)] Genome = ${GB} Gb ; indexation GenMap"
 
-rm -rf "${IDX}"          # genmap exige un dossier index inexistant
+rm -rf "${IDX}"
 run genmap index -F "${GENOME}" -I "${IDX}"
-echo "[$(date)] Index -> ${IDX}"

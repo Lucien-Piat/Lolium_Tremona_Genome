@@ -22,9 +22,7 @@ mkdir -p "${APPTAINER_HOME}"
 
 run() { singularity exec --home "${APPTAINER_HOME}" --bind "${BIND}" "${SIF}" "$@"; }
 
-echo "[$(date)] map K=${READLEN} E=${ERRORS} T=${T}"
 run genmap map -K "${READLEN}" -E "${ERRORS}" \
     -I "${IDX}" -O "${OUT}/genmap" -bg -T "${T}"
 
 run bash -c "awk '\$4>=1' '${OUT}/genmap.bedgraph' | bedtools merge -i - > '${OUT}/mask_mappable.bed'"
-echo "[$(date)] mappable -> ${OUT}/mask_mappable.bed"

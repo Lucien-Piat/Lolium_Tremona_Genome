@@ -6,10 +6,6 @@
 #SBATCH --time=01:00:00
 #SBATCH --output=logs/mask_%x_%j.log
 set -euo pipefail
-# Masque d'accessibilite a DEUX couches (aligne sur Table 13) :
-#   mappabilite (GenMap) INTER (non-TE).
-# La couche profondeur est ecartee : les collapses de paralogues ont deja
-# ete retires physiquement lors du self-synteny purge de l'assemblage.
 
 SIF="$(readlink -f images/sif/popgen.sif)"
 BIND="$PWD"
@@ -42,9 +38,3 @@ run bash -c "export TMPDIR='${TMP}'; set -o pipefail; \
     | bedtools merge -i - > '${OUT}/accessible.bed'"
 
 [ -s "${OUT}/accessible.bed" ] || { echo "ERREUR: accessible.bed vide, voir le log." >&2; exit 1; }
-
-# Rapport
-TOTAL=$(awk '{s+=$2} END{print s}' "${GENOME}.fai")
-KEPT=$(awk '{s+=$3-$2} END{print s}' "${OUT}/accessible.bed")
-awk -v k="${KEPT}" -v t="${TOTAL}" 'BEGIN{printf "[final] accessibles: %d / %d pb (%.1f%%)\n", k, t, 100*k/t}'
-echo "[$(date)] -> ${OUT}/accessible.bed"
