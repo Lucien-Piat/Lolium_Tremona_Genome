@@ -6,6 +6,7 @@ From: condaforge/miniforge3:latest
     mamba install -y -n base -c conda-forge -c bioconda \
         pixy \
         plink2 \
+        plink \
         vcftools \
         genmap \
         mosdepth \
