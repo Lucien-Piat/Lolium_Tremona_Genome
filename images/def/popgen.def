@@ -3,7 +3,16 @@ From: condaforge/miniforge3:latest
 
 %post
     export DEBIAN_FRONTEND=noninteractive
+    
     mamba install -y -n base -c conda-forge -c bioconda \
+        r-geosphere \
+        r-vegan \
+        r-sf \
+        r-rnaturalearth \
+        r-rnaturalearthdata \
+        proj-data \
+        gdal \
+        r-patchwork \
         pixy \
         plink2 \
         plink \
@@ -24,12 +33,23 @@ From: condaforge/miniforge3:latest
         r-reshape2 \
         r-magrittr \
         r-hierfstat \
+        r-patchwork \
+        r-ggrepel \
+        r-ggspatial \
         r-ape
     mamba clean -a -y
+    
+    Rscript -e 'install.packages("rnaturalearthhires", repos = "https://ropensci.r-universe.dev")'
     
 %environment
     export LC_ALL=C
     export LANG=C
+    export TZ=UTC
+    
+    export PROJ_LIB=/opt/conda/share/proj
+    export PROJ_DATA=/opt/conda/share/proj
+    export GDAL_DATA=/opt/conda/share/gdal
+
 
 %runscript
     exec "$@"
