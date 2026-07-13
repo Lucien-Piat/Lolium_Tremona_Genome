@@ -43,7 +43,7 @@ edge.col[tip.idx] <- tip.col
 pdf("njtree_phylo.pdf", width = 10, height = 18)
 plot(tree, type = "phylogram",
      tip.color = tip.col, edge.color = edge.col,
-     align.tip.label = TRUE,      #  toutes les feuilles a droite
+     align.tip.label = TRUE, 
      cex = 0.45, no.margin = FALSE, label.offset = 0.002)
 
 tiplabels(pch = 15, col = tip.col, cex = 0.9, offset = 0.001)
