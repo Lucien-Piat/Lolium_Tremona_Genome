@@ -12,7 +12,7 @@ from pycirclize import Circos  # type: ignore
 from tracks import (
     read_fai, organelle_lengths, find_gaps,
     gc_windows, organelle_gc, gene_density, busco_orthologs, organelle_features,
-    load_self_synteny, load_organelle_links, load_te_mapping, te_density, snp_density
+    load_self_synteny, load_organelle_links, load_te_mapping, te_density
 )
 
 ORG_SCALE = 150
@@ -31,9 +31,9 @@ NUC_PALETTE  = ["#1f77b4", "#ff7f0e", "#2ca02c", "#9467bd", "#8c564b", "#e377c2"
 MITO_COLOR   = "#8d6e63"
 PLTD_COLOR   = "#7cb342"
 
-TRACK_LABEL_SIZE = 10   # was 5.5
-CHR_NAME_SIZE    = 17   # was 11
-CHR_TICK_SIZE    = 11   # was 6
+TRACK_LABEL_SIZE = 10   
+CHR_NAME_SIZE    = 17   
+CHR_TICK_SIZE    = 11   
 
 START_GAP = 15
 
@@ -144,7 +144,6 @@ def build_plot(args, ax=None):
     te_mapping_dict = load_te_mapping(args.te_mapping) if args.te_mapping else {}
     tes = te_density(args.te_gff, nuc, te_mapping_dict, window=WINDOW) if args.te_gff else {}
 
-    snps = snp_density(args.vcf, nuc, window=WINDOW) if args.vcf and args.vcf != "NA" else []
     synteny = load_self_synteny(args.synteny)
     numts = load_organelle_links(args.numt) if Path(args.numt).exists() else []
     nupts = load_organelle_links(args.nupt) if Path(args.nupt).exists() else []
@@ -159,13 +158,6 @@ def build_plot(args, ax=None):
     nupts   = [l for l in nupts   if (l["nuc_end"] - l["nuc_start"]) >= MIN_NUPT]
 
     # Dynamically scale tracks
-    global_snp_max, global_snp_base = 100, 50
-    if snps:
-        all_snp_vals = [v for _, _, _, v in snps]
-        if all_snp_vals:
-            global_snp_max = np.percentile(all_snp_vals, 99)
-            global_snp_base = np.percentile(all_snp_vals, 25)
-
     global_te_total_max = 10
     if tes:
         total_max_vals = []
@@ -194,10 +186,9 @@ def build_plot(args, ax=None):
             sector.text("Scaffolds          ", r=101.0, **lbl)
             sector.text("Contigs         ",     r=96.5,  **lbl)
             sector.text("TEs        ",          r=89.0,  **lbl)
-            sector.text("SNPs        ",         r=81.0,  **lbl)
-            sector.text("Genes         ",       r=73.0,  **lbl)
-            sector.text("GC%        ",          r=65.0,  **lbl)
-            sector.text("BUSCO         ",       r=57.0,  **lbl)
+            sector.text("Genes         ",       r=81.0,  **lbl)
+            sector.text("GC%        ",          r=73.0,  **lbl)
+            sector.text("BUSCO         ",       r=65.0,  **lbl)
 
         # Chromosome color band with LAST TICK ONLY
         color_tr = sector.add_track((100, 103))
@@ -227,7 +218,7 @@ def build_plot(args, ax=None):
         # Inner tracks mapping
         if is_org:
             # Invisible dummy track to anchor the organelle links deeply
-            sector.add_track((54, 60))
+            sector.add_track((62, 68))
         else:
             # 1. TOTAL TEs Track (Unified Stacked Bar, 86 - 92)
             te_total_tr = sector.add_track((86, 92))
@@ -249,40 +240,16 @@ def build_plot(args, ax=None):
                             fc=TE_COLORS[fam], ec="none", alpha=1.0,
                         )
                         bottom = top
-            # SNP density Track
-            snp_tr = sector.add_track((78, 84))
-            snp_tr.axis(fc="#f5f5f5", ec="black", lw=0.2)
-            if snps:
-                c_snps = [(s, e, v) for c, s, e, v in snps if c == name]
-                if c_snps:
-                    x = np.array([(s + e) / 2 for s, e, _ in c_snps])
-                    y = np.array([v for _, _, v in c_snps])
-
-                    y_clipped = np.clip(y, 0, global_snp_max)
-                    y_above   = np.maximum(y_clipped, global_snp_base)
-                    y_below   = np.minimum(y_clipped, global_snp_base)
-                    y_base    = np.full_like(y_clipped, global_snp_base)
-
-                    snp_tr.fill_between(x, y_above, y2=y_base,
-                                        vmin=0, vmax=global_snp_max,
-                                        fc="#ff8a80", alpha=0.8)
-                    snp_tr.fill_between(x, y_below, y2=y_base,
-                                        vmin=0, vmax=global_snp_max,
-                                        fc="#81d4fa", alpha=0.8)
-                    snp_tr.line(x, y_clipped, vmin=0, vmax=global_snp_max,
-                                color="black", lw=0.3)
-                    snp_tr.line(x, y_base, vmin=0, vmax=global_snp_max,
-                                color="black", lw=0.3, ls="--", alpha=0.6)
 
             # Gene density
-            gd_tr = sector.add_track((70, 76))
+            gd_tr = sector.add_track((78, 84))
             gd_tr.axis(fc="white", ec="black", lw=0.2)
             vals = [v for c, _, _, v in genes if c == name]
             if vals:
                 gd_tr.heatmap(vals, cmap="Greens", vmin=0, vmax=max(max(vals), 1))
 
             # GC content
-            gc_tr = sector.add_track((62, 68))
+            gc_tr = sector.add_track((70, 76))
             gc_tr.axis(fc="white", ec="black", lw=0.2)
             cgc = [(s, e, v) for c, s, e, v in gc if c == name]
             if cgc:
@@ -300,7 +267,7 @@ def build_plot(args, ax=None):
                     gc_tr.line(x, y_clipped, vmin=GC_VMIN, vmax=GC_VMAX, color="black", lw=0.3)
 
             # BUSCO
-            bu_tr = sector.add_track((54, 60))
+            bu_tr = sector.add_track((62, 68))
             bu_tr.axis(fc="white", ec="black", lw=0.2)
             cbu = [(pos, st) for c, pos, st in busco if c == name and st in BUSCO_COLORS]
             if cbu:
@@ -365,7 +332,6 @@ if __name__ == "__main__":
     p.add_argument("--pltd-gb",     required=True, dest="pltd_gb")
     p.add_argument("--te-gff",      required=True, help="GFF3 file containing TE annotations")
     p.add_argument("--te-mapping",  required=False, help="TSV file mapping Motif ID to TE Class")
-    p.add_argument("--vcf",         required=True, help="VCF file for SNP density")
     p.add_argument("--output",      default="results/data_circo/circos.pdf")
     args = p.parse_args()
     build_plot(args)

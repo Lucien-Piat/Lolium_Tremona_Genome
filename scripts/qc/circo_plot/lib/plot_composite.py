@@ -184,7 +184,6 @@ def parse_args():
     p.add_argument("--pltd-gb", required=True, dest="pltd_gb")
     p.add_argument("--te-gff", required=True, dest="te_gff")
     p.add_argument("--te-mapping", required=False, dest="te_mapping")
-    p.add_argument("--vcf", required=True)
     # Panel B and C inputs
     p.add_argument("--dist", required=True, help="te_gene_distance.tsv for panel B")
     p.add_argument("--classtab", required=True, help="TE class_table for panel C")

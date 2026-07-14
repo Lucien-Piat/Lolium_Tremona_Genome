@@ -1,5 +1,4 @@
 """Data preparation for the Circos plot tracks."""
-import gzip
 import re
 from bisect import bisect_left
 from collections import OrderedDict, defaultdict
@@ -288,26 +287,4 @@ def te_density(gff_path, chrom_lengths, mapping_dict, window=1_000_000):
                 
         out[chrom] = (x, widths, y_stack)
         
-    return out
-
-# SNP Density
-def snp_density(vcf_path, chrom_lengths, window=1_000_000):
-    print("Computing SNP density")
-    starts = defaultdict(list)
-    opener = gzip.open if vcf_path.endswith('.gz') else open
-    
-    with opener(vcf_path, 'rt') as fh:
-        for line in fh:
-            if line.startswith("#"): continue
-            p = line.split("\t", 2)
-            starts[p[0]].append(int(p[1]))
-            
-    out = []
-    for chrom, length in chrom_lengths.items():
-        ss = sorted(starts.get(chrom, []))
-        for ws in range(0, length, window):
-            we = min(ws + window, length)
-            lo = bisect_left(ss, ws)
-            hi = bisect_left(ss, we)
-            out.append((chrom, ws, we, hi - lo))
     return out
