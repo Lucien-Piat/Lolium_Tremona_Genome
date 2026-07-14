@@ -36,6 +36,8 @@ From: condaforge/miniforge3:latest
         r-patchwork \
         r-ggrepel \
         r-ggspatial \
+        r-zoo \
+        r-ggrastr \
         r-ape
     mamba clean -a -y
     
