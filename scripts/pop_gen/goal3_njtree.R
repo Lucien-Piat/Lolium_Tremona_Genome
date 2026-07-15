@@ -31,7 +31,7 @@ tree <- nj(dist.mat)
 tree <- ladderize(tree)
 write.tree(tree, "njtree.nwk")
 
-# Population et couleur de chaque feuille
+# Population and color mapping
 pop <- read.table(pop.fn, col.names = c("sample.id", "population"))
 tip.pop <- pop$population[match(tree$tip.label, pop$sample.id)]
 tip.col <- col.pop[tip.pop]
@@ -40,20 +40,26 @@ edge.col <- rep("grey30", nrow(tree$edge))
 tip.idx  <- match(seq_along(tree$tip.label), tree$edge[, 2])
 edge.col[tip.idx] <- tip.col
 
+# Phylogram 
 pdf("njtree_phylo.pdf", width = 10, height = 18)
 plot(tree, type = "phylogram",
      tip.color = tip.col, edge.color = edge.col,
      align.tip.label = TRUE, 
      cex = 0.45, no.margin = FALSE, label.offset = 0.002)
-
 tiplabels(pch = 15, col = tip.col, cex = 0.9, offset = 0.001)
-
 dev.off()
 
-pdf("njtree_fan.pdf", width = 11, height = 11)
-plot(tree, type = "fan", tip.color = tip.col, edge.color = edge.col,
-     cex = 0.5, no.margin = TRUE, label.offset = 0.004)
-tiplabels(pch = 15, col = tip.col, cex = 1.1, offset = 0.002)
+# Fan 
+pdf("njtree_fan.pdf", width = 16, height = 16)
+plot(tree, type = "fan", 
+     tip.color = tip.col, 
+     edge.color = edge.col,
+     edge.width = 1.5, 
+     cex = 2.0, 
+     no.margin = TRUE, 
+     label.offset = 0.01)
+tiplabels(pch = 15, col = tip.col, cex = 1.5, offset = 0.004)
 legend("topright", legend = names(col.pop), col = col.pop,
-       pch = 15, cex = 0.9, bty = "n")
+       pch = 15, pt.cex = 1.5, cex = 1.2, bty = "n", inset = 0.02)
+
 dev.off()
