@@ -8,7 +8,7 @@
 
 # Boilerplate
 set -euo pipefail
-SIF="images/sif/qc_tools.sif"
+SIF="images/sif/read_profiling.sif"
 BAM="TREM1.hifi_reads.bam"
 OUT="raw_reads/lmultiflorum_hifi.fastq.gz"
 T=${SLURM_CPUS_PER_TASK}

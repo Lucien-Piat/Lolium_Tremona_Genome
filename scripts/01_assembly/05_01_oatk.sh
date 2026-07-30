@@ -9,22 +9,21 @@
 # Boilerplate
 set -euo pipefail
 SIF=$(readlink -f images/sif/oatk.sif)
-POLISH_SIF=$(readlink -f images/sif/polish.sif)
+TOOLS_SIF=$(readlink -f images/sif/assembly_tools.sif)
 READS=$(readlink -f raw_reads/lmultiflorum_hifi.fastq.gz)
 MITO_DB=$(readlink -f reference_data/oatkdb/OatkDB/v20230921/embryophyta_mito.fam)
 PLTD_DB=$(readlink -f reference_data/oatkdb/OatkDB/v20230921/embryophyta_pltd.fam)
 OUTDIR="results/05_oatk"
 PREFIX="lmultiflorum"
 T=${SLURM_CPUS_PER_TASK}
-ROOT=$(pwd)
 BIND="/cluster/scratch"
 run() { singularity exec --bind "${BIND}" "${SIF}" "$@"; }
-run_polish() { singularity exec --bind "${BIND}" "${POLISH_SIF}" "$@"; }
+run_tools() { singularity exec --bind "${BIND}" "${TOOLS_SIF}" "$@"; }
 mkdir -p "${OUTDIR}" logs
 cd "${OUTDIR}"
 
-# Subsample 
-run_polish bash -c "seqkit sample -s 42 -p 0.5 -j ${T} ${READS} -o reads_subsampled.fastq.gz"
+# Subsample
+run_tools bash -c "seqkit sample -s 42 -p 0.5 -j ${T} ${READS} -o reads_subsampled.fastq.gz"
 
 SYNCMER_COV=150
 

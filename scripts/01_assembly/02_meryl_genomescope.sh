@@ -8,7 +8,7 @@
 
 # Boilerplate
 set -euo pipefail
-SIF="images/sif/qc_tools.sif"
+SIF="images/sif/read_profiling.sif"
 READS="raw_reads/lmultiflorum_hifi.fastq.gz"
 MERYL_DIR="results/02_qc/meryl"
 GS_DIR="results/02_qc/genomescope2"

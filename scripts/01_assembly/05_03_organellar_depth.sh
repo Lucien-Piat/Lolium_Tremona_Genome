@@ -8,13 +8,12 @@
 
 # Boilerplate
 set -euo pipefail
-SIF=$(readlink -f images/sif/polish.sif)
+SIF=$(readlink -f images/sif/assembly_tools.sif)
 ASM=$(readlink -f results/04c_purgegrass/final_primary_with_trim.fa)
 READS=$(readlink -f raw_reads/lmultiflorum_hifi.fastq.gz)
 IDS=$(readlink -f results/04c_purgegrass/p_organelar.txt)
 OUTDIR="results/07_organellar_depth"
 T=${SLURM_CPUS_PER_TASK}
-ROOT=$(pwd)
 BIND="/cluster/scratch"
 run() { singularity exec --bind "${BIND}" "${SIF}" "$@"; }
 mkdir -p "${OUTDIR}" logs

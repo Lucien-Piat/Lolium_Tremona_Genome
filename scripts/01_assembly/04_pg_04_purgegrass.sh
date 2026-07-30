@@ -26,3 +26,4 @@ singularity exec --bind "${ROOT}":"${ROOT}" "${SIF}" \
     -t "${T}" 2>&1 | tee purgegrass_local.log
 
 PG_EXIT=${PIPESTATUS[0]}
+exit "${PG_EXIT}"

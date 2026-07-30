@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 """Convert Oatk FASTA + BED to GenBank format."""
 import sys

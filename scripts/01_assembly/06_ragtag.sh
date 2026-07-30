@@ -17,7 +17,7 @@ REF_GZ=$(readlink -f "$1")
 ASM_GZ=$(readlink -f "$2")
 LABEL="$3"
 
-SIF=$(readlink -f images/sif/evaluation.sif)
+SIF=$(readlink -f images/sif/assembly_tools.sif)
 OUTDIR="results/06_ragtag/${LABEL}"
 FINAL="${OUTDIR}/lmultiflorum.${LABEL}.scaffolded.fa"
 T=${SLURM_CPUS_PER_TASK:-4}

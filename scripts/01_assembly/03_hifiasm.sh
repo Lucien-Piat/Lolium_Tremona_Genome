@@ -11,9 +11,7 @@ set -euo pipefail
 SIF=$(readlink -f images/sif/hifiasm.sif)
 READS=$(readlink -f raw_reads/lmultiflorum_hifi.fastq.gz)
 OUTDIR="results/03_assembly"
-TRACKING="results/assembly_tracking.tsv"
 T=${SLURM_CPUS_PER_TASK}
-ROOT=$(pwd)
 BIND="/cluster/scratch"
 run() { singularity exec --bind "${BIND}" "${SIF}" "$@"; }
 mkdir -p "${OUTDIR}" logs
