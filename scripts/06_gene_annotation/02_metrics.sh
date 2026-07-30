@@ -8,7 +8,7 @@ FAI=reference_data/lmultiflorum.tremona.fa.fai
 OUTDIR=results/07_annotation
 OUT="${OUTDIR}/annotation_metrics.tsv"
 
-# per chromosome gene count, following the fai order
+# per chromosome gene count
 : > "${OUT}.body"
 total=0
 while read -r chr len _; do
@@ -18,7 +18,7 @@ while read -r chr len _; do
     total=$(( total + n ))
 done < "${FAI}"
 
-# genes not on a placed pseudo-chromosome (unplaced contigs)
+# unplaced contigs
 placed=$(awk -F'\t' '$2>=50000000{print $1}' "${FAI}" | sort -u)
 total_all=$(awk -F'\t' '$3=="gene"' "${GFF}" | wc -l)
 on_placed=$(awk -F'\t' '$3=="gene"{print $1}' "${GFF}" \
@@ -30,15 +30,3 @@ unplaced=$(( total_all - on_placed ))
     sort -k1,1 "${OUT}.body"
 } > "${OUT}"
 rm -f "${OUT}.body"
-
-echo "=== per chromosome ==="
-column -t -s$'\t' "${OUT}"
-echo
-echo "=== summary ==="
-printf "Total genes in GFF        : %d\n" "${total_all}"
-printf "On placed pseudo-chrom    : %d (%.1f%%)\n" "${on_placed}" \
-    "$(awk -v a="${on_placed}" -v b="${total_all}" 'BEGIN{print 100*a/b}')"
-printf "On unplaced contigs       : %d (%.1f%%)\n" "${unplaced}" \
-    "$(awk -v a="${unplaced}" -v b="${total_all}" 'BEGIN{print 100*a/b}')"
-echo
-echo "Table -> ${OUT}"
