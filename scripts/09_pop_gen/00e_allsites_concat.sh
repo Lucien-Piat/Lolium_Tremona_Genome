@@ -34,3 +34,4 @@ run bash -c "set -o pipefail; \
 run tabix -p vcf "${OUT}/allsites.hc.vcf.gz"
 
 N=$(run bash -c "bcftools index -n '${OUT}/allsites.hc.vcf.gz'")
+echo "[$(date)] all-sites sites : ${N}"

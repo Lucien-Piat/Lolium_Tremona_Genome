@@ -35,4 +35,3 @@ run pixy --stats pi watterson_theta tajima_d \
     --output_folder "${OUT}" \
     --output_prefix "pixy_${CHR}"
 
-echo "[$(date)] ${CHR} termine"

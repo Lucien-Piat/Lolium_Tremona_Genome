@@ -36,8 +36,6 @@ run pixy --stats fst \
     --output_folder "${OUT}" \
     --output_prefix "pixy_${CHR}"
 
-echo "[$(date)] ${CHR} termine"
-
 
 #cd results/fst_windows
 #head -1 pixy_chr1_fst.txt > pixy_fst.txt
