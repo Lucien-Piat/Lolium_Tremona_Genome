@@ -9,7 +9,7 @@ From: condaforge/mambaforge:latest
         samtools \
         perl
 
-    git clone https://github.com/CSU-KangHu/HiTE.git /HiTE
+    git clone --branch v3.3.3 --depth 1 https://github.com/CSU-KangHu/HiTE.git /HiTE
     pip install -r /HiTE/requirements.txt
 
     mamba clean --all --yes
