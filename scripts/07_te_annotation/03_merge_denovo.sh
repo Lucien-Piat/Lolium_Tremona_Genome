@@ -25,9 +25,6 @@ for d in "${DENOVO}"/*/; do
     [[ -s "${lib}" ]] || { echo "WARN: pas de librairie dans ${d}" >&2; continue; }
     sed "s/^>/>${c}__/" "${lib}" >> "${RAW}"
 done
-echo "Librairie brute : $(grep -c '^>' "${RAW}") sequences"
 
 run cd-hit-est -i "${RAW}" -o "${NR}" \
     -c 0.8 -n 5 -aS 0.95 -aL 0.95 -M 0 -T "${T}" -d 0 -g 1
-
-echo "Librairie non redondante : $(grep -c '^>' "${NR}") sequences -> ${NR}"

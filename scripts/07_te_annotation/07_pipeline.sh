@@ -14,16 +14,8 @@ FIG_DIR="${BASEDIR}/figures"
 mkdir -p "${GENE_TE_DIR}" "${FIG_DIR}"
 BIND=$PWD
 : "${TMPDIR:=/tmp}"
-SIF=$(readlink -f images/sif/collapse_diag.sif)
-PLOT_SIF=$(readlink -f images/sif/plotting.sif 2>/dev/null || echo "")
-run()  { singularity exec --bind "${BIND}" --bind "${TMPDIR}" "${SIF}" "$@"; }
-plot() {
-    if [[ -n "${PLOT_SIF}" && -f "${PLOT_SIF}" ]]; then
-        singularity exec --bind "${BIND}" --bind "${TMPDIR}" "${PLOT_SIF}" "$@"
-    else
-        "$@"
-    fi
-}
+SIF=$(readlink -f images/sif/duplication_classification.sif)
+run() { singularity exec --bind "${BIND}" --bind "${TMPDIR}" "${SIF}" "$@"; }
 
 read_out() { if [[ "${RMOUT}" == *.gz ]]; then zcat "${RMOUT}"; else cat "${RMOUT}"; fi; }
 GSIZE=$(awk '{s+=$2} END{print s}' "${FAI}")
@@ -92,6 +84,4 @@ CODING_BP=$(awk -F'\t' '$3=="CDS" {printf "%s\t%d\t%d\n", $1, $4-1, $5}' "${GENE
 echo "Genome partition -> ${PART}  (genome=${GSIZE} bp, coding_nonTE=${CODING_BP} bp)"
 
 
-plot python3 scripts/07_te_annotation/draft_plot_chr1_te_families.py
-
-echo "Done."
+run python3 scripts/07_te_annotation/draft_plot_chr1_te_families.py

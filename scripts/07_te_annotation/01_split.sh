@@ -6,7 +6,4 @@ mkdir -p "${OUTDIR}"
 
 cut -f1 "${GENOME}.fai" | while read -r name; do
     samtools faidx "${GENOME}" "${name}" > "${OUTDIR}/${name}.fa"
-    echo "  ${name} -> ${OUTDIR}/${name}.fa"
 done
-
-echo "done."
