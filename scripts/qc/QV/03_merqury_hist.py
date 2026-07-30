@@ -5,7 +5,7 @@ import seaborn as sns # type: ignore
 plt.style.use('default')
 sns.set_theme(style="ticks", palette="muted")
 
-df = pd.read_csv('results/data_circo/tremona.lmultiflorum.tremona.primary.spectra-cn.hist', 
+df = pd.read_csv('merqury/tremona.01_lmul_tremona.bp.hap1.p_ctg.spectra-cn.hist', 
                  sep=r'\s+', 
                  names=['Copies', 'kmer_multiplicity', 'Count'])
 
@@ -15,27 +15,31 @@ df = df.dropna()
 
 pivot_df = df.pivot(index='kmer_multiplicity', columns='Copies', values='Count').fillna(0)
 
-order = ['read-only', '1', '2']
+order = ['read-only', '1', '2', '3', '4']
 existing_cols = [c for c in order if c in pivot_df.columns]
 pivot_df = pivot_df[existing_cols]
 
 merqury_colors = {
     'read-only': '#808080',  
     '1': '#e41a1c',          
-    '2': '#377eb8'
+    '2': '#377eb8',
+    '3': "#f9b61a", 
+    '4': "#f91ad7"
 }
 colors = [merqury_colors[c] for c in existing_cols]
 
 fig, ax = plt.subplots(figsize=(8, 6))
+df = df[df['kmer_multiplicity'] <= 100]
+ax.stackplot(pivot_df.index, pivot_df.T, labels=pivot_df.columns,
+             colors=colors, alpha=0.6, edgecolor='black', linewidth=0.5,
+             rasterized=True)
 
-ax.stackplot(pivot_df.index, pivot_df.T, labels=pivot_df.columns, colors=colors, alpha=0.6, edgecolor='black', linewidth=0.5)
-
-ax.set_xlim(0, 85) 
+ax.set_xlim(0, 100) 
 ax.set_ylim(0, 3.5e7) 
 ax.set_xlabel('kmer_multiplicity', fontsize=12, fontweight='bold')
 ax.set_ylabel('Count', fontsize=12, fontweight='bold')
 ax.legend(title='k-mer', frameon=True)
 sns.despine()
 plt.tight_layout()
-plt.savefig('clean_kmer_spectra.pdf', format='pdf', dpi=300)
+plt.savefig('clean_kmer_spectra.pdf', format='pdf', dpi=200)
 plt.close()
