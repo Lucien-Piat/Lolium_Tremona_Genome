@@ -5,9 +5,7 @@ import numpy as np # type: ignore
 from pycirclize import Circos # type: ignore
 import matplotlib # type: ignore
 
-# ==========================================
 # 0. Global Text & Size Styling
-# ==========================================
 plt.style.use("seaborn-v0_8-white")
 matplotlib.rcParams.update({
     "axes.spines.top": False,
@@ -22,9 +20,7 @@ matplotlib.rcParams.update({
     "figure.titlesize": 26
 })
 
-# ==========================================
 # 1. Configuration and Input Files
-# ==========================================
 DIR = "results/before_after/"
 
 FAI_BEFORE = DIR + "lmultiflorum.tremona_before.fa.fai"
@@ -36,7 +32,6 @@ BUSCO_AFTER = DIR + "lmultiflorum.tremona_full_table_busco_format_after.tsv"
 SYNTENY_BEFORE = DIR + "synteny_ks_before.tsv"
 SYNTENY_AFTER = DIR + "synteny_ks_after.tsv"
 
-# Styling
 BUSCO_COLORS = {
     "Complete":   "#2e7d32", 
     "Duplicated": "#ef6c00", 
@@ -44,11 +39,9 @@ BUSCO_COLORS = {
     "Missing":    "#9e9e9e", 
 }
 
-# Link colors (transparent)
 SYNTENY_INTER = "#1976d240"  
 SYNTENY_INTRA = "#9c27b040"  
 
-# Histogram colors (solid)
 SYNTENY_INTER_SOLID = "#1976d2"
 SYNTENY_INTRA_SOLID = "#9c27b0"
 
@@ -57,9 +50,7 @@ CHR_COLORS = {
     "chr4": "#9467bd", "chr5": "#8c564b", "chr6": "#e377c2", "chr7": "#17becf",
 }
 
-# ==========================================
 # 2. Helper Functions
-# ==========================================
 def parse_fai(fai_path):
     df = pd.read_csv(fai_path, sep='\t', header=None, names=['NAME', 'LENGTH', 'OFFSET', 'LINEBASES', 'LINEWIDTH'])
     df = df[df['NAME'].str.startswith('chr')].copy()
@@ -102,7 +93,6 @@ def build_circos_plot(ax, fai_path, synteny_path, busco_path, is_after=False, fa
         chr_color = CHR_COLORS.get(sector.name, "#757575") 
         chr_track.axis(fc=chr_color, ec="black", lw=1.0)
         
-        # Pushed r outwards to 112 to prevent large text from clipping the rings
         chr_track.text(sector.name, r=112, size=25, fontweight="bold")
         
         if sector.name != 'Purged':
@@ -130,7 +120,6 @@ def plot_compact_busco(ax, busco_path, title_letter, show_legend=False):
     statuses = ["Complete", "Duplicated", "Fragmented", "Missing"]
     left = 0
     
-    # Thickness maintained as thick bars
     bar_thickness = 0.8 
     
     for status in statuses:
@@ -148,7 +137,6 @@ def plot_compact_busco(ax, busco_path, title_letter, show_legend=False):
     ax.set_xlabel("BUSCOs (%)", fontweight="medium", labelpad=10)
     ax.spines[['top', 'right', 'left']].set_visible(False)
     
-    # Pad massively increased to create space between title (G./H.) and the bar
     ax.set_title(title_letter, loc="left", fontweight="bold", pad=45)
     
     if show_legend:
@@ -171,14 +159,10 @@ def plot_intra_inter_hist(ax, df, title_letter, bins, x_col, xlabel_text, show_l
     if show_legend:
         ax.legend(loc='upper right', frameon=False, handlelength=1.5)
 
-# ==========================================
-# 3. Figure Layout and Rendering
-# ==========================================
+# 3. Layout 
 def main():
     fig = plt.figure(figsize=(22, 28))
     
-    # Left and Right margins pushed to the edges (0.02 and 0.98) to force Circos full width.
-    # Wspace reduced to 0.1 to bring the columns closer.
     gs = gridspec.GridSpec(4, 2, height_ratios=[4.5, 0.6, 0.4, 1.5], hspace=0.35, wspace=0.1, left=0.02, right=0.98)
     
     ax_circos_before = fig.add_subplot(gs[0, 0], polar=True)
@@ -187,23 +171,18 @@ def main():
     ax_busco_before  = fig.add_subplot(gs[1, 0])
     ax_busco_after   = fig.add_subplot(gs[1, 1])
     
-    # Spacer row for legend: gs[2, :]
-    
     ax_hist_before   = fig.add_subplot(gs[3, 0])
     ax_hist_after    = fig.add_subplot(gs[3, 1])
     
-    # --- Row 1: Circos (E and F) ---
     build_circos_plot(ax_circos_before, FAI_BEFORE, SYNTENY_BEFORE, BUSCO_BEFORE)
     ax_circos_before.set_title("E. Before ks-curation", loc="left", fontweight="bold", pad=30)
     
     build_circos_plot(ax_circos_after, FAI_AFTER, SYNTENY_AFTER, BUSCO_AFTER, is_after=True, fai_before_path=FAI_BEFORE)
     ax_circos_after.set_title("F. After ks-curation", loc="left", fontweight="bold", pad=30)
     
-    # --- Row 2: Compact BUSCO (G and H) ---
     plot_compact_busco(ax_busco_before, BUSCO_BEFORE, "G.", show_legend=True) 
     plot_compact_busco(ax_busco_after, BUSCO_AFTER, "H.", show_legend=False)
     
-    # --- Row 4: Synteny (Intra vs Inter) (I and J) ---
     df_b = parse_synteny(SYNTENY_BEFORE)
     df_a = parse_synteny(SYNTENY_AFTER)
     x_col = 'age_Mya' if 'age_Mya' in df_b.columns else 'median_ks'
@@ -220,7 +199,6 @@ def main():
     ax_hist_before.set_ylim(0, max_y)
     ax_hist_after.set_ylim(0, max_y)
 
-    # Output
     plt.savefig("deduplication_summary.pdf", format="pdf", dpi=300, bbox_inches='tight')
     print("Figure 'deduplication_summary.pdf' generated successfully.")
 
