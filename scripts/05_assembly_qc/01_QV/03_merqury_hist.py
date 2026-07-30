@@ -1,3 +1,4 @@
+"""Plot the merqury spectra-copy-number histogram for the raw hap1 assembly."""
 import pandas as pd # type: ignore
 import matplotlib.pyplot as plt # type: ignore
 import seaborn as sns # type: ignore

@@ -8,7 +8,7 @@
 
 # Boilerplate
 set -euo pipefail
-SIF="images/sif/qc_tools.sif"
+SIF="images/sif/read_profiling.sif"
 READS="./lmultiflorum_tremona_hifi.fastq.gz"
 MERYL_DIR="results/meryl"
 T=${SLURM_CPUS_PER_TASK}

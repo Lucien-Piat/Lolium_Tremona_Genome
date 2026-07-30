@@ -8,7 +8,7 @@
 
 # Boilerplate
 set -euo pipefail
-SIF=$(readlink -f images/sif/QC.sif)
+SIF=$(readlink -f images/sif/genome_analysis.sif)
 ASM=$(readlink -f reference_data/lmultiflorum.tremona.fa)
 MERYL_TAR=$(readlink -f results/meryl/lmultiflorum.meryl.tar.gz)
 OUTDIR="results/merqury"
