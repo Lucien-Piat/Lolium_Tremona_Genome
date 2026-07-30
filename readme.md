@@ -1,5 +1,7 @@
 # Lolium multiflorum Tremona Genome
 
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.21371081-blue)](https://doi.org/10.5281/zenodo.21705105)
+
 Chromosome-scale genome assembly, duplication curation, annotation, and
 population genomics of the Swiss *L. multiflorum* ecotype Tremona. 
 
