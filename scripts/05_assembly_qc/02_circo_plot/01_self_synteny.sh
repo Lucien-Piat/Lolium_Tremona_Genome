@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT=$(pwd)
-SIF="${ROOT}/images/sif/QC.sif"
+SIF="${ROOT}/images/sif/genome_analysis.sif"
 GENOME="${ROOT}/reference_data/lmultiflorum.tremona.fa"
 MITO="${ROOT}/results/data_circo/lmul_tremona.mito.fasta"
 PLTD="${ROOT}/results/data_circo/lmul_tremona.pltd.fasta"
@@ -23,12 +23,10 @@ map_mito() {
     local links="${low}_links.tsv"
 
     if [ ! -s "${paf}" ]; then
-        echo "[$(date)] minimap2 ${tag}"
         run minimap2 -t "${T}" -cx asm20 -N 50 --secondary=yes -K 10M \
             "${GENOME}" "${org}" > "${paf}"
     fi
     if [ ! -s "${links}" ]; then
-        echo "[$(date)] filter ${tag} (minlen=${minlen}, minid=${minid})"
         run awk -v ml="${minlen}" -v mi="${minid}" -v tag="${tag}" '
             $11 >= ml && ($10/$11) >= mi {
                 print $1, $3, $4, $6, $8, $9, $5, tag, ($10/$11)
@@ -43,13 +41,11 @@ map_pldt() {
     local links="${low}_links.tsv"
 
     if [ ! -s "${paf}" ]; then
-        echo "[$(date)] minimap2 ${tag}"
         run minimap2 -t "${T}" -k 15 -w 10 -A 1 -B 2 -O 2,32 -E 1,0 \
             -N 50 --secondary=yes -K 10M \
             "${GENOME}" "${org}" > "${paf}"
     fi
     if [ ! -s "${links}" ]; then
-        echo "[$(date)] filter ${tag} (minlen=${minlen}, minid=${minid})"
         run awk -v ml="${minlen}" -v mi="${minid}" -v tag="${tag}" '
             $11 >= ml && ($10/$11) >= mi {
                 print $1, $3, $4, $6, $8, $9, $5, tag, ($10/$11)
@@ -68,5 +64,3 @@ fi
     echo "===== NUMTs ====="; wc -l < numt_links.tsv
     echo "===== NUPTs ====="; wc -l < nupt_links.tsv
 } | tee organelle_stats.txt
-
-echo "[$(date)] Done"

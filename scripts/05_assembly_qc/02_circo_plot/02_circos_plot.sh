@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT=$(pwd)
-SIF="${ROOT}/images/sif/QC.sif"
+SIF="${ROOT}/images/sif/genome_analysis.sif"
 LIB="${ROOT}/scripts/05_assembly_qc/02_circo_plot/lib"
 DATA="${ROOT}/results/data_circo"
 

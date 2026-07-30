@@ -185,9 +185,9 @@ def parse_args():
     p.add_argument("--te-gff", required=True, dest="te_gff")
     p.add_argument("--te-mapping", required=False, dest="te_mapping")
     # Panel B and C inputs
-    p.add_argument("--dist", required=True, help="te_gene_distance.tsv for panel B")
-    p.add_argument("--classtab", required=True, help="TE class_table for panel C")
-    p.add_argument("--partition", required=True, help="genome_partition.tsv for panel C")
+    p.add_argument("--dist", required=True)
+    p.add_argument("--classtab", required=True)
+    p.add_argument("--partition", required=True)
     # Composite output
     p.add_argument("--output", default="results/data_circo/circos_composite.pdf")
     return p.parse_args()

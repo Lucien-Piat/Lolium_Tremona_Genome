@@ -2,7 +2,6 @@
 """Convert an MCScanX .collinearity file to a Circos links TSV."""
 import re
 import sys
-from pathlib import Path
 
 HEADER_RE = re.compile(r"^## Alignment\s+\d+:.*?(plus|minus)\s*$")
 

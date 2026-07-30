@@ -4,12 +4,10 @@ ASSEMBLIES=$(cut -f1 datasets.tsv | tr '\n' ' ')
 
 for file in $ASSEMBLIES; do
     if [ ! -f "$file" ]; then
-        echo "Error: Assembly file not found -> $file"
-        echo "Aborting script."
+        echo "Error: Assembly file not found -> $file" >&2
         exit 1
     fi
 done
-echo "All assembly files located successfully. Proceeding to QUAST..."
 
 LABELS=$(cut -f2 datasets.tsv | paste -sd, -)
 
