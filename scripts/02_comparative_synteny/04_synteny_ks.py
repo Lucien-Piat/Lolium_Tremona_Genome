@@ -404,7 +404,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    D = "results/synteny/tremona_purged"
+    D = "results/02_synteny/tremona_purged"
     p = argparse.ArgumentParser(description="Per-block Ks (NG) + BUSCO overlay, Tremona.")
     p.add_argument("--collinearity", default=f"{D}/tremona_purged.collinearity")
     p.add_argument("--cds",          default=f"{D}/cds.fa")

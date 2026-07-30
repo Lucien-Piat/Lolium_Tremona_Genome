@@ -3,9 +3,9 @@
 # Per-chromosome gene counts and basic metrics from the merged annotation.
 
 set -euo pipefail
-GFF=results/07_annotation/tremona.merged.gff
+GFF=results/06_gene_annotation/tremona.merged.gff
 FAI=reference_data/lmultiflorum.tremona.fa.fai
-OUTDIR=results/07_annotation
+OUTDIR=results/06_gene_annotation
 OUT="${OUTDIR}/annotation_metrics.tsv"
 
 # per chromosome gene count

@@ -189,7 +189,7 @@ def parse_args():
     p.add_argument("--classtab", required=True)
     p.add_argument("--partition", required=True)
     # Composite output
-    p.add_argument("--output", default="results/data_circo/circos_composite.pdf")
+    p.add_argument("--output", default="results/05_genome_landscape/circos_composite.pdf")
     return p.parse_args()
 
 

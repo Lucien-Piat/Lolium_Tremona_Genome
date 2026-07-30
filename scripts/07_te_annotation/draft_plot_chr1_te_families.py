@@ -5,9 +5,9 @@ import numpy as np, pandas as pd
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-BED="results/te_hite/gene_te/te.bed"; FAI="reference_data/lmultiflorum.tremona.fa.fai"
+BED="results/07_te_hite/gene_te/te.bed"; FAI="reference_data/lmultiflorum.tremona.fa.fai"
 CHR="chr1"; WIN=1_000_000
-OUT="results/te_hite/figures/chr1_te_families.pdf"
+OUT="results/07_te_hite/figures/chr1_te_families.pdf"
 CENTRO_FAMILY=None          # set to None to disable the centromere band
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 None

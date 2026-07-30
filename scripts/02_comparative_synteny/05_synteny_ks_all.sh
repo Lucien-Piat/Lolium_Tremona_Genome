@@ -14,13 +14,13 @@ DATASETS=(
   "sikem|reference_data/lmultiflorum.sikem.fasta"
   "paraquat|reference_data/lmultiflorum.paraquat.fasta"
   "perenne|reference_data/lmultiflorum.perenne.fa"
-  "brachypodium|results/synteny/brachypodium/genome.fa"
-  "oryza|results/synteny/oryza/genome.fa"
+  "brachypodium|results/02_synteny/brachypodium/genome.fa"
+  "oryza|results/02_synteny/oryza/genome.fa"
 )
 
 for d in "${DATASETS[@]}"; do
     IFS='|' read -r NAME GENOME <<< "${d}"
-    SYN="${ROOT}/results/synteny/${NAME}"
+    SYN="${ROOT}/results/02_synteny/${NAME}"
     GFF="${SYN}/annotation.gff3"
 
     [ -s "${SYN}/cds.fa" ] && continue
@@ -43,4 +43,4 @@ for d in "${DATASETS[@]}"; do
         { print }' "${SYN}/cds.raw.fa" > "${SYN}/cds.fa"
 done
 run python3 "${LIB}/05_synteny_ks_all.py"
-echo "[$(date)] Done -> results/synteny/synteny_ks_all.pdf"
+echo "[$(date)] Done -> results/02_synteny/synteny_ks_all.pdf"

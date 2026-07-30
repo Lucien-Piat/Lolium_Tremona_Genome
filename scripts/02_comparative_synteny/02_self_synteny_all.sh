@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT=$(pwd)
 SIF="${ROOT}/images/sif/genome_analysis.sif"
 LIB="${ROOT}/scripts/05_assembly_qc/02_circo_plot/lib"
-OUTBASE="${ROOT}/results/synteny"
+OUTBASE="${ROOT}/results/02_synteny"
 T=4
 
 COLLAPSE_ISOFORMS=TRUE 

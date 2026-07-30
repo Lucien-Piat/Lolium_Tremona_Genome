@@ -332,6 +332,6 @@ if __name__ == "__main__":
     p.add_argument("--pltd-gb",     required=True, dest="pltd_gb")
     p.add_argument("--te-gff",      required=True)
     p.add_argument("--te-mapping",  required=False)
-    p.add_argument("--output",      default="results/data_circo/circos.pdf")
+    p.add_argument("--output",      default="results/05_genome_landscape/circos.pdf")
     args = p.parse_args()
     build_plot(args)

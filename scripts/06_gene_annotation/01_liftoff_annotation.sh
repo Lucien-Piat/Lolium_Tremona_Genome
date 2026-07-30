@@ -8,7 +8,7 @@ BRUN_FA=$(readlink -f reference_data/LOLMU.fa)
 BRUN_GFF=$(readlink -f reference_data/LOLMU.genes.matched.gff)
 KYUSS_FA=$(readlink -f reference_data/kyuss_v2.fasta)
 KYUSS_GFF=$(readlink -f reference_data/kyuss_v2.gff)
-OUTDIR="results/07_annotation"
+OUTDIR="results/06_gene_annotation"
 T=4
 ROOT=$(pwd)
 run() { singularity exec --bind "${ROOT}":"${ROOT}" "${SIF}" "$@"; }

@@ -8,8 +8,8 @@
 
 set -euo pipefail
 SIF=$(readlink -f images/sif/hite.sif)
-CHUNKDIR=$(readlink -f results/te_hite/chunks)
-OUTBASE="results/te_hite/denovo"
+CHUNKDIR=$(readlink -f results/07_te_hite/chunks)
+OUTBASE="results/07_te_hite/denovo"
 CHR=${1:?usage: sbatch 02_hite_denovo.sh <chr_name>}
 T=${SLURM_CPUS_PER_TASK:-32}
 BIND=$PWD

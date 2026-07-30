@@ -4,10 +4,10 @@ set -euo pipefail
 ROOT=$(pwd)
 SIF="${ROOT}/images/sif/genome_analysis.sif"
 GENOME="${ROOT}/reference_data/lmultiflorum.tremona.fa"
-MITO="${ROOT}/results/data_circo/lmul_tremona.mito.fasta"
-PLTD="${ROOT}/results/data_circo/lmul_tremona.pltd.fasta"
+MITO="${ROOT}/results/05_genome_landscape/lmul_tremona.mito.fasta"
+PLTD="${ROOT}/results/05_genome_landscape/lmul_tremona.pltd.fasta"
 
-DATA_DIR="${ROOT}/results/data_circo"
+DATA_DIR="${ROOT}/results/05_genome_landscape"
 mkdir -p "${DATA_DIR}"
 
 T=4

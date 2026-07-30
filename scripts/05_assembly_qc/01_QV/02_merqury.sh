@@ -11,7 +11,7 @@ set -euo pipefail
 SIF=$(readlink -f images/sif/genome_analysis.sif)
 ASM=$(readlink -f reference_data/lmultiflorum.tremona.fa)
 MERYL_TAR=$(readlink -f results/meryl/lmultiflorum.meryl.tar.gz)
-OUTDIR="results/merqury"
+OUTDIR="results/05_merqury"
 T=${SLURM_CPUS_PER_TASK:-8}
 BIND="/cluster/scratch"
 run()    { singularity exec --bind "${BIND}" "${SIF}" "$@"; }

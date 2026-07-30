@@ -13,7 +13,7 @@ SIF="${ROOT}/images/sif/popgen.sif"
 ALLSITES="${ROOT}/results/04_joint_calling/cohort_allsites.vcf.gz"
 MASK="${ROOT}/results/mask/accessible.bed"
 FAI="${ROOT}/reference_data/lmultiflorum.tremona.fa.fai"
-TMP="${ROOT}/results/filtered_vcf/tmp_allsites"
+TMP="${ROOT}/results/09_filtered_vcf/tmp_allsites"
 
 MIN_DP=10
 MIN_GQ=30

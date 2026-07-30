@@ -4,7 +4,7 @@
 set -euo pipefail
 SIF=images/sif/surgery.sif
 ASM=clean_assembly/lmultiflorum.tremona.primary.fa
-OUTDIR=results/orientation
+OUTDIR=results/04_orientation
 THREADS=${1:-4}
 SEG=500000          # large blocks only
 MINID=85

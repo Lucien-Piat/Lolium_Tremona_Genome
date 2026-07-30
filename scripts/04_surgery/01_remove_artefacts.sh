@@ -4,7 +4,7 @@
 set -euo pipefail
 SIF=images/sif/surgery.sif
 REF=reference_data/lmultiflorum.tremona.fa
-BED=results/dupclass/masked_intervals.bed
+BED=results/03_duplication_classification/masked_intervals.bed
 OUTDIR=clean_assembly
 GAP=100
 run() { singularity exec "${SIF}" "$@"; }

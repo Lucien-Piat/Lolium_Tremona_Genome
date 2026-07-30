@@ -10,7 +10,7 @@ set -euo pipefail
 ROOT=$(pwd)
 SIF="${ROOT}/images/sif/popgen.sif"
 FAI="${ROOT}/reference_data/lmultiflorum.tremona.fa.fai"
-OUT="${ROOT}/results/filtered_vcf"
+OUT="${ROOT}/results/09_filtered_vcf"
 TMP="${OUT}/tmp_allsites"
 T="${SLURM_CPUS_PER_TASK:-4}"
 

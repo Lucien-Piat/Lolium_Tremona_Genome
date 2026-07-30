@@ -19,9 +19,9 @@ KAKS_BIN  = "KaKs_Calculator"
 INTER_COLOR = "#1976d2"
 INTRA_COLOR = "#9c27b0"
 
-SYN_BASE = "results/synteny"
+SYN_BASE = "results/02_synteny"
 DATASETS = ["tremona", "rabiosa", "sikem", "paraquat", "perenne", "brachypodium", "oryza"]
-OUTPUT   = "results/synteny/synteny_ks_all.pdf"
+OUTPUT   = "results/02_synteny/synteny_ks_all.pdf"
 
 CODON_TABLE = {
     'TCA': 'S', 'TCC': 'S', 'TCG': 'S', 'TCT': 'S', 'TTC': 'F', 'TTT': 'F',

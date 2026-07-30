@@ -10,9 +10,9 @@
 
 set -euo pipefail
 SIF=$(readlink -f images/sif/hite.sif)
-CHUNKDIR=$(readlink -f results/te_hite/chunks)
-LIB=$(readlink -f results/te_hite/library/tremona_TE.lib.fa)
-OUTBASE="results/te_hite/annotation"
+CHUNKDIR=$(readlink -f results/07_te_hite/chunks)
+LIB=$(readlink -f results/07_te_hite/library/tremona_TE.lib.fa)
+OUTBASE="results/07_te_hite/annotation"
 CHR=${1:?usage: sbatch 04_repeatmasker.sh <chr>}
 T=${SLURM_CPUS_PER_TASK:-16}
 PA=$(( T / 4 )); [[ "${PA}" -ge 1 ]] || PA=1

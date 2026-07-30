@@ -10,9 +10,9 @@ set -euo pipefail
 
 ROOT=$(pwd)
 SIF="${ROOT}/images/sif/popgen.sif"
-ALLSITES="${ROOT}/results/filtered_vcf/allsites.hc.vcf.gz"
+ALLSITES="${ROOT}/results/09_filtered_vcf/allsites.hc.vcf.gz"
 POP_CH="${ROOT}/scripts/09_pop_gen/pop_ch.tsv"
-OUT="${ROOT}/results/dxy_ch"
+OUT="${ROOT}/results/09_isolation_by_distance"
 WINDOW=20000
 
 export APPTAINER_HOME="${ROOT}/.apphome"

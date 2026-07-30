@@ -9,7 +9,7 @@ library(ggspatial)
 df_coords <- read.csv("scripts/09_pop_gen/ch_coords.csv")
 df_coords$lon <- ifelse(df_coords$lon > 100, -df_coords$lon, df_coords$lon)
 
-q_matrix <- read.table("results/pca/Q_K6.tbl", skip = 1, header = FALSE)
+q_matrix <- read.table("results/09_pca/Q_K6.tbl", skip = 1, header = FALSE)
 colnames(q_matrix) <- c("accession", paste0("K", 1:6))
 
 pop_map <- read.table("scripts/09_pop_gen/pop.tsv", header = FALSE, col.names = c("accession", "pop"))
@@ -137,5 +137,5 @@ final_plot <- map_us + map_ch +
   plot_layout(widths = c(0.75, 1)) & 
   theme(plot.margin = margin(0, 0, 0, 0, "cm"))
 
-if (!dir.exists("results/map")) { dir.create("results/map", recursive = TRUE) }
-ggsave("results/map/combined_map.pdf", plot = final_plot, width = 12, height = 7)
+if (!dir.exists("results/09_sampling_map")) { dir.create("results/09_sampling_map", recursive = TRUE) }
+ggsave("results/09_sampling_map/combined_map.pdf", plot = final_plot, width = 12, height = 7)

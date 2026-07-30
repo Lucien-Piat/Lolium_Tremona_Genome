@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-BASEDIR=results/te_hite
+BASEDIR=results/07_te_hite
 RMOUT="${BASEDIR}/tremona_TE.out"
 GENOME=reference_data/lmultiflorum.tremona.fa
 FAI="${GENOME}.fai"

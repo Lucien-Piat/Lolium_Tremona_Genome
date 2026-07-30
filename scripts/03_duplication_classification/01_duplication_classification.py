@@ -25,15 +25,15 @@ CONFIG = {
     "vcf":   "reference_data/cohort.snps.vcf.gz",
     "hwe":   "collapse_diag/trem.hwe",
     "bam":   "mapping/TREM1.dedup.bam",
-    "ks":    "results/synteny/tremona/blocks_ks.tsv",
-    "collinearity": "results/synteny/tremona/tremona.collinearity",
-    "gff":   "results/synteny/tremona/tremona.gff",
-    "gff3":  "results/synteny/tremona/annotation.gff3",
-    "axt":   "results/synteny/tremona/kaks_dapnv60w/pairs.axt",
+    "ks":    "results/02_synteny/tremona/blocks_ks.tsv",
+    "collinearity": "results/02_synteny/tremona/tremona.collinearity",
+    "gff":   "results/02_synteny/tremona/tremona.gff",
+    "gff3":  "results/02_synteny/tremona/annotation.gff3",
+    "axt":   "results/02_synteny/tremona/kaks_dapnv60w/pairs.axt",
     "fai":   "reference_data/lmultiflorum.tremona.fa.fai",
     "busco": "reference_data/lmultiflorum.tremona_full_table_busco_format.tsv",
-    "presence_matrix": "results/dupshare/presence_matrix.tsv",
-    "outdir": "results/dupclass",
+    "presence_matrix": "results/02_duplication_sharing/presence_matrix.tsv",
+    "outdir": "results/03_duplication_classification",
 }
 MOSDEPTH = "mosdepth"
 MAPQ_HI = 20

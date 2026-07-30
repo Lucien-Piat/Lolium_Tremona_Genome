@@ -9,7 +9,7 @@ set -euo pipefail
 
 ROOT=$(pwd)
 SIF="${ROOT}/images/sif/popgen.sif"
-VCF="${ROOT}/results/filtered_vcf/snps.masked.biallelic.vcf.gz"
+VCF="${ROOT}/results/09_filtered_vcf/snps.masked.biallelic.vcf.gz"
 POP="${ROOT}/scripts/09_pop_gen/pop.tsv"
 OUT="${ROOT}/results/ld_decay"
 

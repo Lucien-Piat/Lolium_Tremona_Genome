@@ -11,7 +11,7 @@ ROOT=$(pwd)
 SIF="${ROOT}/images/sif/popgen.sif"
 SNPS="${ROOT}/results/04_joint_calling/cohort_snps_filtered.vcf.gz"
 MASK="${ROOT}/results/mask/accessible.bed"
-OUT="${ROOT}/results/filtered_vcf"
+OUT="${ROOT}/results/09_filtered_vcf"
 
 MAF=0.05
 LD_R2=0.1

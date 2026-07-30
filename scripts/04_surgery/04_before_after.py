@@ -21,7 +21,7 @@ matplotlib.rcParams.update({
 })
 
 # 1. Configuration and Input Files
-DIR = "results/before_after/"
+DIR = "results/04_paralies_before_after/"
 
 FAI_BEFORE = DIR + "lmultiflorum.tremona_before.fa.fai"
 FAI_AFTER = DIR + "lmultiflorum.tremona_after.fa.fai"

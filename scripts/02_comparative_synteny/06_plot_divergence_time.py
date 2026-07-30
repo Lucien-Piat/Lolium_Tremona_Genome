@@ -25,7 +25,7 @@ COLOR_INTRA    = "#C846A8"
 EDGE_COLOR     = "white"
 EDGE_WIDTH     = 0.6
 
-BASE_DIR       = "results/synteny"
+BASE_DIR       = "results/02_synteny"
 FILE_NAME      = "blocks_ks.tsv"
 OUTPUT         = "synteny_time_histograms.pdf"
 
@@ -93,7 +93,7 @@ fig, axes = plt.subplots(
 
 for ax, (folder, label) in zip(axes, SPECIES):
     if folder not in data_cache:
-        ax.text(0.5, 0.5, f"missing: results/synteny/{folder}/{FILE_NAME}",
+        ax.text(0.5, 0.5, f"missing: results/02_synteny/{folder}/{FILE_NAME}",
                 transform=ax.transAxes, ha="center", va="center",
                 color="grey", fontsize=9)
     else:

@@ -629,11 +629,11 @@ def main(args):
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description="Orthogroup-based sharing of synteny blocks.")
     p.add_argument("--orthogroups", required=True)
-    p.add_argument("--syn-base", default="results/synteny")
-    p.add_argument("--ks-tsv", default="results/synteny/tremona/synteny_ks.tsv")
+    p.add_argument("--syn-base", default="results/02_synteny")
+    p.add_argument("--ks-tsv", default="results/02_synteny/tremona/synteny_ks.tsv")
     p.add_argument("--busco",
                    default="reference_data/lmultiflorum.tremona_full_table_busco_format.old.tsv")
-    p.add_argument("--outdir", default="results/dupshare2")
+    p.add_argument("--outdir", default="results/02_duplication_sharing")
     p.add_argument("--reference", default="tremona")
     p.add_argument("--ks-split", type=float, default=0.2)
     p.add_argument("--min-shared", type=int, default=2)

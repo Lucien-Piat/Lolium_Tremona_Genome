@@ -10,9 +10,9 @@
 
 set -euo pipefail
 SIF=$(readlink -f images/sif/hite.sif)
-ANNDIR=$(readlink -f results/te_hite/annotation)
+ANNDIR=$(readlink -f results/07_te_hite/annotation)
 GENOME=$(readlink -f reference_data/lmultiflorum.tremona.fa)
-OUTDIR="results/te_hite/landscape"
+OUTDIR="results/07_te_hite/landscape"
 BIND=$PWD
 : "${TMPDIR:=/tmp}"
 

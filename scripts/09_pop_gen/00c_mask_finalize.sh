@@ -10,7 +10,7 @@ set -euo pipefail
 SIF="$(readlink -f images/sif/popgen.sif)"
 BIND="$PWD"
 GENOME="reference_data/lmultiflorum.tremona.fa"
-TE_GFF="results/te_hite/tremona_TE.gff3"
+TE_GFF="results/07_te_hite/tremona_TE.gff3"
 OUT="results/mask"
 TMP="${OUT}/tmp_sort"
 

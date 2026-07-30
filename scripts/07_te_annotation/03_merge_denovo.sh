@@ -8,8 +8,8 @@
 
 set -euo pipefail
 SIF=$(readlink -f images/sif/hite.sif)
-DENOVO=$(readlink -f results/te_hite/denovo)
-OUTDIR="results/te_hite/library"
+DENOVO=$(readlink -f results/07_te_hite/denovo)
+OUTDIR="results/07_te_hite/library"
 T=${SLURM_CPUS_PER_TASK:-8}
 BIND=$PWD
 run() { singularity exec --bind "${BIND}" "${SIF}" "$@"; }
