@@ -9,7 +9,7 @@
 
 set -euo pipefail
 exec 2>&1
-SIF="${SIF_MASHTREE:-./image/mashtree_fastp_bcalm.sif}"
+SIF="${SIF_MASHTREE:-./images/sif/draft_mash_tree.sif}"
 RESULTS="${RESULTS:-./results}"
 ASSEMBLIES_DIR="${ASSEMBLIES_DIR:-./assemblies}"
 GENOMES_DIR="${GENOMES_DIR:-$(cd ../genomes 2>/dev/null && pwd || echo '')}"
@@ -35,4 +35,3 @@ apptainer exec \
         "${ASSEMBLIES_DIR}"/*.unitigs.fa.gz \
         "${GENOMES_DIR}"/*.fasta.gz
 
-echo "Done."

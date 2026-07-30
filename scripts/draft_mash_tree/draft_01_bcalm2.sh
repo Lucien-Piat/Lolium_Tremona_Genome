@@ -13,7 +13,7 @@ set -euo pipefail
 exec 2>&1
 
 # Configurable paths
-SIF="${SIF_MASHTREE:-./image/mashtree_fastp_bcalm.sif}"
+SIF="${SIF_MASHTREE:-./images/sif/draft_mash_tree.sif}"
 FILT_DIR="${FILT_DIR:-./filtered_reads}"
 OUTDIR="${ASSEMBLIES_DIR:-./assemblies}"
 SAMPLE_LIST="${SAMPLE_LIST:-./samples.txt}"
