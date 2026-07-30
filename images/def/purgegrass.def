@@ -1,10 +1,6 @@
 Bootstrap: docker
 From: mambaorg/micromamba:1.5.8
 
-%labels
-    Author Lucien Piat
-    Purpose PurgeGrass dependencies (MCScanX from bioconda)
-
 %post
     export PATH=/opt/conda/bin:$PATH
     export MAMBA_ROOT_PREFIX=/opt/conda
