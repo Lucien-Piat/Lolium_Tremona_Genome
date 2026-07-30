@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT=$(pwd)
-SIF="${ROOT}/images/sif/QC.sif"
+SIF="${ROOT}/images/sif/genome_analysis.sif"
 LIB="${ROOT}/scripts/05_assembly_qc/02_circo_plot/lib"
 OUTBASE="${ROOT}/results/synteny"
 T=4
@@ -54,7 +54,6 @@ run_self_synteny() {
     # choose which gene models to keep
     if [ ! -s keep_ids.txt ]; then
         if [ "${COLLAPSE_ISOFORMS}" = true ]; then
-            echo "[$(date)] keeping longest isoform per gene"
             run awk -F'\t' '
                 function canon(s){ sub(/^rna-/,"",s); sub(/^gene-/,"",s); return s }
                 $3=="mRNA" {
@@ -75,7 +74,6 @@ run_self_synteny() {
                     for (g in best) print canon(best[g])
                 }' "${GFF}" > keep_ids.txt
         else
-            echo "[$(date)] keeping all isoforms"
             run awk -F'\t' '
                 function canon(s){ sub(/^rna-/,"",s); sub(/^gene-/,"",s); return s }
                 $3=="mRNA" {
@@ -87,15 +85,12 @@ run_self_synteny() {
 
     # proteins + MCScanX gff
     if [ ! -s proteins.raw.faa ]; then
-        echo "[$(date)] gffread"
         run gffread -y proteins.raw.faa -g "${GENOME}" "${GFF}"
     fi
     if [ ! -s proteins.clean.faa ]; then
-        echo "[$(date)] clean proteins"
         run python3 "${LIB}/clean_proteins.py" proteins.raw.faa proteins.clean.faa
     fi
     if [ ! -s proteins.faa ]; then
-        echo "[$(date)] normalize headers + subset to kept models"
         run awk '
             function canon(s){ sub(/^rna-/,"",s); sub(/^gene-/,"",s); return s }
             NR==FNR { k[$0]=1; next }
@@ -103,7 +98,6 @@ run_self_synteny() {
             keep' keep_ids.txt proteins.clean.faa > proteins.faa
     fi
     if [ ! -s "${NAME}.gff" ]; then
-        echo "[$(date)] MCScanX gff"
         run awk -F'\t' -v p="${PREFIX}" '
             function canon(s){ sub(/^rna-/,"",s); sub(/^gene-/,"",s); return s }
             NR==FNR { keep[$1]=1; next }
@@ -119,11 +113,9 @@ run_self_synteny() {
 
     # DIAMOND self blast
     if [ ! -s proteins.db.dmnd ]; then
-        echo "[$(date)] diamond makedb"
         run diamond makedb --in proteins.faa -d proteins.db --threads "${T}"
     fi
     if [ ! -s "${NAME}.blast" ]; then
-        echo "[$(date)] diamond blastp"
         run diamond blastp \
             -q proteins.faa -d proteins.db -o "${NAME}.blast" \
             -e 1e-10 --outfmt 6 --max-target-seqs 5 --more-sensitive \
@@ -132,11 +124,9 @@ run_self_synteny() {
 
     # MCScanX + links
     if [ ! -s "${NAME}.collinearity" ]; then
-        echo "[$(date)] MCScanX"
         run MCScanX -s 5 -e 1e-10 -m 25 "${OUTDIR}/${NAME}"
     fi
     if [ ! -s self_synteny_links.tsv ]; then
-        echo "[$(date)] collinearity to links"
         run python3 "${LIB}/collinearity_to_links.py" \
             "${NAME}" "${PREFIX}" self_synteny_links.tsv
     fi

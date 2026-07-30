@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT=$(pwd)
-SIF="${ROOT}/images/sif/QC.sif"
+SIF="${ROOT}/images/sif/genome_analysis.sif"
 LIB="${ROOT}/scripts/02_comparative_synteny"
 SYN="${ROOT}/results/synteny/tremona_purged"
 GENOME="${ROOT}/reference_data/lmultiflorum.tremona.fa"
@@ -13,7 +13,6 @@ BUSCO="${ROOT}/reference_data/lmultiflorum.tremona_full_table_busco_format.tsv"
 run() { singularity exec --bind "${ROOT}":"${ROOT}" "${SIF}" "$@"; }
 
 if [ ! -s "${SYN}/cds.fa" ]; then
-    echo "[$(date)] Extracting CDS"
     run gffread -x "${SYN}/cds.raw.fa" -g "${GENOME}" "${GFF}"
     run awk '
         function canon(s){ sub(/^rna-/,"",s); sub(/^gene-/,"",s); return s }

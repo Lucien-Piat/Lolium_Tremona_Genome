@@ -12,9 +12,6 @@ run() { singularity exec --bind "${ROOT}":"${ROOT}" "${SIF}" "$@"; }
 mkdir -p "${OUTDIR}"
 cd "${OUTDIR}"
 
-SUMMARY_FILE="mapping_summary.txt"
-N_REF=$(awk -F'\t' '$3=="gene"' "${REF_GFF}" | wc -l)
-
 for TARGET_FA in "${ROOT}"/reference_data/*.fa "${ROOT}"/reference_data/*.fasta; do
     [ -e "$TARGET_FA" ] || continue
     if [[ "$TARGET_FA" == *.fai ]]; then continue; fi

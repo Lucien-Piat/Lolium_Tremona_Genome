@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT=$(pwd)
-SIF="${ROOT}/images/sif/QC.sif"
+SIF="${ROOT}/images/sif/genome_analysis.sif"
 LIB="${ROOT}/scripts/02_comparative_synteny"
 
 run() { singularity exec --bind "${ROOT}":"${ROOT}" "${SIF}" "$@"; }

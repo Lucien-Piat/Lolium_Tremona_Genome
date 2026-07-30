@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 ROOT=$(pwd)
-SIF="${ROOT}/images/sif/QC.sif"   # doit contenir orthofinder, sinon construis une image dediee
+SIF="${ROOT}/images/sif/genome_analysis.sif"   # doit contenir orthofinder, sinon construis une image dediee
 run(){ singularity exec --bind "${ROOT}":"${ROOT}" "${SIF}" "$@"; }
 
 PROT="${ROOT}/results/orthology/proteomes"

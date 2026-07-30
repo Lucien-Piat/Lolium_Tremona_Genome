@@ -628,7 +628,7 @@ def main(args):
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description="Orthogroup-based sharing of synteny blocks.")
-    p.add_argument("--orthogroups", required=True, help="OrthoFinder Orthogroups.tsv")
+    p.add_argument("--orthogroups", required=True)
     p.add_argument("--syn-base", default="results/synteny")
     p.add_argument("--ks-tsv", default="results/synteny/tremona/synteny_ks.tsv")
     p.add_argument("--busco",
