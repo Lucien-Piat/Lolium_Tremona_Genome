@@ -8,8 +8,7 @@ From: condaforge/mambaforge:24.3.0-0
         bedtools=2.31.1 \
         samtools=1.21 \
         seqkit \
-        pigz \
-        agat
+        pigz
     mamba clean --all --yes
 
 %environment

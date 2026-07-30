@@ -5,8 +5,7 @@ Stage: builder
 %post
     mamba create -p /opt/asm -y -c bioconda -c conda-forge \
         hifiasm=0.25.0 \
-        pigz \
-        seqkit
+        pigz
     
     mamba clean -a -y
 

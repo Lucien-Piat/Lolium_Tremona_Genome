@@ -1,0 +1,18 @@
+Bootstrap: docker
+From: condaforge/mambaforge:latest
+
+%post
+    mamba install -y -c bioconda -c conda-forge \
+        python=3.8 \
+        repeatmasker \
+        cd-hit \
+        samtools \
+        perl
+
+    git clone https://github.com/CSU-KangHu/HiTE.git /HiTE
+    pip install -r /HiTE/requirements.txt
+
+    mamba clean --all --yes
+
+%environment
+    export PATH="/opt/conda/bin:$PATH"

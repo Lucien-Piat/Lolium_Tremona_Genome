@@ -3,18 +3,10 @@ From: condaforge/mambaforge:latest
 
 %post
     mamba install -y -c bioconda -c conda-forge \
-        fastp \
         bcalm \
-        pigz \
-        curl
-
-    mamba install -y -c bioconda -c conda-forge \
-        mashtree
-
-    which fastp bcalm mashtree pigz curl
-
+        mashtree \
+        pigz
     mamba clean --all --yes
 
 %environment
     export PATH="/opt/conda/bin:$PATH"
-

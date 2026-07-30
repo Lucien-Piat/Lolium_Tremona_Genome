@@ -3,19 +3,14 @@ From: condaforge/mambaforge:latest
 Stage: builder
 
 %post
-    mamba update -n base -y conda mamba
     mamba create -p /opt/qc -y -c bioconda -c conda-forge \
         python=3.9 \
-        longqc \
-        kraken2 \
         meryl \
         genomescope2 \
         pigz \
         samtools \
         seqkit
     mamba clean -a -y
-    sed -i '1i #!/usr/bin/env python' /opt/qc/bin/longQC.py
-    chmod +x /opt/qc/bin/longQC.py
 
 Bootstrap: docker
 From: debian:bookworm-slim

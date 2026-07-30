@@ -13,12 +13,8 @@ From: condaforge/miniforge3:latest
         seqkit \
         samtools \
         bedtools \
-        liftoff \
         gffread \
         minimap2 \
-        winnowmap \
-        syri \
-        plotsr \
         biopython \
         'pandas<2' \
         matplotlib \
