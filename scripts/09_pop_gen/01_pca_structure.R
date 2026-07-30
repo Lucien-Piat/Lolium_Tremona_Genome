@@ -20,7 +20,7 @@ recompute <- if (length(args) >= 9) as.logical(args[9]) else TRUE
 
 setwd(outdir)
 
-k.range <- 3:12
+k.range <- 2:12
 n.rep   <- 10
 n.cpu   <- 4
 

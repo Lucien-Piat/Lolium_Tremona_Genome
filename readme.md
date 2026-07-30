@@ -1,8 +1,7 @@
 # Lolium multiflorum Tremona Genome
 
 Chromosome-scale genome assembly, duplication curation, annotation, and
-population genomics of the Swiss *L. multiflorum* ecotype Tremona. Companion
-repository to the bioRxiv paper (Piat et al.).
+population genomics of the Swiss *L. multiflorum* ecotype Tremona. 
 
 User friendly duplication curation pipeline is aviable here : [Paralies](https://github.com/Lucien-Piat/ParaLies)
 ## Running

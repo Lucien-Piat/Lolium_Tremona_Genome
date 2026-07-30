@@ -49,7 +49,7 @@ plot_stat(wt_tab, "avg_watterson_theta",
 
 # D
 td_tab <- read.table("pixy_tajima_d.txt", header = TRUE, stringsAsFactors = FALSE) |>
-  filter(is.finite(tajima_d), tajima_d > -5, tajima_d < 5)
+  filter(no_sites >= 5000, is.finite(tajima_d), tajima_d > -5, tajima_d < 5)
 plot_stat(td_tab, "tajima_d", expression(Tajima*"'"*s~italic(D)),
           "tajimaD_by_pop.pdf", vline = 0)
 

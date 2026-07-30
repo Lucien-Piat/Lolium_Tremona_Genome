@@ -4,7 +4,7 @@
 set -euo pipefail
 
 PROJECT=$(readlink -f .)
-N=100                      # number of shards (also the array size)
+N=200                      # number of shards (also the array size)
 CONC=40                    # max shards running at once
 OUTDIR="${PROJECT}/results/04_joint_calling"
 mkdir -p "${OUTDIR}" "${PROJECT}/logs"
