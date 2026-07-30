@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: sbatch 01_fastp.sh [raw_reads_dir]
+# Usage: sbatch 00_fastp.sh [raw_reads_dir]
 #SBATCH --job-name=fastp
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=6
@@ -13,7 +13,7 @@ exec 2>&1
 RAW_DIR="${RAW_DIR:-${1:-./raw_reads}}"
 FILT_DIR="${FILT_DIR:-./filtered_reads}"
 QC_DIR="${QC_DIR:-./fastp_reports}"
-SIF="${SIF_MASHTREE:-./image/mashtree_fastp_bcalm.sif}"
+SIF="${SIF_FASTP:-./images/sif/fastp.sif}"
 THREADS=6
 
 mkdir -p "$FILT_DIR" "$QC_DIR" logs
@@ -44,5 +44,4 @@ for r1 in "${RAW_DIR}"/*_R1.fastq.gz; do
         --json "${QC_DIR}/${SAMPLE}.fastp.json" \
         --html /dev/null
     PROCESSED=$((PROCESSED + 1))
-    log "[OK] $SAMPLE"
 done

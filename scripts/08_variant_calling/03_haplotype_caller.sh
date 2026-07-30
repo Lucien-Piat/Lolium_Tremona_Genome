@@ -78,4 +78,3 @@ echo "Called ${VARIANTS} variant records (SNPs + indels) for ${SAMPLE}"
 run bcftools stats "${GVCF}" | grep '^SN' | head -20
 
 rm -f "${BAM}" "${BAM}.bai"
-echo "done"

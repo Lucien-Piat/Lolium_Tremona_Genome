@@ -50,4 +50,3 @@ else
     echo "WARN: verification incomplete, shards CONSERVES" >&2
     exit 1
 fi
-echo "done"

@@ -49,4 +49,3 @@ fi
 
 rm -f "${SORTED}" "${SORTED}.bai"
 rm -rf "${TMP}"
-echo "done"

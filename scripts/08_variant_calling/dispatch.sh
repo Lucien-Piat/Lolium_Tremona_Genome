@@ -5,8 +5,6 @@
 SAMPLE=$1
 MAIN_JOB_ID=$2
 
-echo "Submitting pipeline for sample: $SAMPLE"
-
 JOB1_ARGS=("--parsable")
 
 if [ -n "$MAIN_JOB_ID" ]; then
