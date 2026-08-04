@@ -57,12 +57,14 @@ res <- res[order(res$population), ]
 write.csv(res, "fis_by_population.csv", row.names = FALSE)
 print(res)
 
-p_fis <- ggplot(res, aes(population, FIS, fill = population)) +
+p_fis <- ggplot(res, aes(fct_rev(population), FIS, fill = population)) +
   geom_col() +
   geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.8) +
   scale_fill_manual(values = col.pop, guide = "none") +
+  coord_flip() +
   xlab("Population") + ylab(expression(F[IS]~"(1 - "*H[o]*"/"*H[e]*")")) +
-  pub_theme
+  pub_theme +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5))
 ggsave("fis_by_population.pdf", p_fis, width = 9, height = 6.5)
 
 pops    <- levels(factor(pop.vec))
