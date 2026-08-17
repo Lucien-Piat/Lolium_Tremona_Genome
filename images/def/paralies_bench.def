@@ -1,0 +1,46 @@
+Bootstrap: docker
+From: mambaorg/micromamba:1.5.8
+
+%labels
+    Author Lucien Piat
+    Purpose ParaLies benchmarking (simulation, purge_dups, purge_haplotigs, scoring)
+
+%post
+    cat > /tmp/benchmark_env.yml <<'EOF'
+name: base
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - snakemake-minimal>=8
+  - biopython
+  - numpy
+  - pandas
+  - matplotlib
+  - scikit-learn
+  - pbsim3
+  - minimap2
+  - samtools
+  - bedtools
+  - diamond
+  - mcscanx
+  - purge_dups
+  - purge_haplotigs
+  - gffread
+  - kakscalculator2
+  - pyfaidx
+  - git
+EOF
+
+    micromamba install -y -n base -f /tmp/benchmark_env.yml
+    micromamba clean --all --yes
+    export PATH=/opt/conda/bin:$PATH
+    /opt/conda/bin/pip install git+https://github.com/Lucien-Piat/ParaLies.git
+%environment
+    export PATH=/opt/conda/bin:$PATH
+    export LC_ALL=C.UTF-8
+    export LANG=C.UTF-8
+
+%runscript
+    exec "$@"
