@@ -1,0 +1,412 @@
+configfile: "config.yaml"
+
+EXPS     = config["experiments"]
+THR      = f"{config['paralies_threshold']:g}"
+HETS     = [f"{h:g}" for h in config["het_levels"]]
+BASE_HET = HETS[0]
+REPS     = [f"{i:02d}" for i in range(config["replicates"])]
+FRACS    = [f"{f:g}" for f in config["degrade_fracs"]]
+MODES    = config["degrade_modes"]
+SIZES    = [f"{m:g}" for m in config["scale_sizes_mb"]]
+DENS_MB  = f"{config['scale_density_size_mb']:g}"
+DENS     = [f"{round(1.0 - k, 6):g}" for k in config["scale_density_keep"]]
+BASE_MB  = f"{config['injection_base_mb']:g}"
+
+wildcard_constraints:
+    exp  = "|".join(EXPS),
+    rep  = r"\d+",
+    het  = r"[0-9.]+",
+    frac = r"[0-9.]+",
+    drop = r"[0-9.]+",
+    mode = r"drop|frag",
+    mb   = r"[0-9.]+",
+
+localrules: all, aggregate_blocks, aggregate_bp
+
+
+rule all:
+    input: "results/figure_summary.pdf", "results/figure_bp_errors.pdf"
+
+
+# --- reference, and the pre-purge that clears its own recent duplications ---
+rule fetch_reference_fasta:
+    output: temp("results/data/genome_full.fa")
+    shell:  "curl -sSL {config[fasta_url]} | gunzip > {output}"
+
+
+rule fetch_reference_annotation:
+    output: temp("results/data/genome_full.gff3")
+    shell:  "curl -sSL {config[gff_url]} | gunzip > {output}"
+
+
+rule extract_target_chromosomes:
+    input:
+        fa  = "results/data/genome_full.fa",
+        gff = "results/data/genome_full.gff3",
+    output:
+        fa  = "results/data/genome.fa",
+        gff = "results/data/genome.gff3",
+    params:
+        chroms = " ".join(config["chromosome"]
+                          if isinstance(config["chromosome"], list)
+                          else [config["chromosome"]]),
+    container: "dependencies/paralies_bench.sif"
+    shell:
+        r"""
+        set -euo pipefail
+        samtools faidx {input.fa}
+        : > {output.fa}
+        : > {output.gff}
+        for C in {params.chroms}; do
+            samtools faidx {input.fa} "$C" | sed "1s/.*/>$C/" >> {output.fa}
+            awk -v c="$C" 'BEGIN{{FS=OFS="\t"}} !/^#/ && $1==c' \
+                {input.gff} >> {output.gff}
+        done
+        """
+
+
+rule subset_injection_base:
+    input:
+        fa  = "results/data/genome.fa",
+        gff = "results/data/genome.gff3",
+    output:
+        fa  = temp("results/data/base_raw.fa"),
+        gff = temp("results/data/base_raw.gff3"),
+    params: target_mb = BASE_MB
+    container: "dependencies/paralies_bench.sif"
+    script:    "scripts/make_subset.py"
+
+
+rule index_base_raw:
+    input:  "results/data/base_raw.fa"
+    output: temp("results/data/base_raw.fa.fai")
+    container: "dependencies/paralies_bench.sif"
+    shell:  "samtools faidx {input}"
+
+
+rule paralies_on_raw_base:
+    input:
+        fa  = "results/data/base_raw.fa",
+        fai = "results/data/base_raw.fa.fai",
+        gff = "results/data/base_raw.gff3",
+    output:
+        bed     = "results/data/prepurge/to_remove.bed",
+        synteny = "results/data/prepurge/synteny_ks.tsv",
+    params:    threshold = THR
+    threads:   4
+    container: "dependencies/paralies_bench.sif"
+    script:    "scripts/run_paralies.py"
+
+
+rule prepurge_reference:
+    input:
+        fa  = "results/data/base_raw.fa",
+        gff = "results/data/base_raw.gff3",
+        bed = "results/data/prepurge/to_remove.bed",
+    output:
+        fa  = "results/data/base.fa",
+        gff = "results/data/base.gff3",
+    container: "dependencies/paralies_bench.sif"
+    script:    "scripts/prepurge_reference.py"
+
+
+rule index_base:
+    input:  "results/data/base.fa"
+    output: "results/data/base.fa.fai"
+    container: "dependencies/paralies_bench.sif"
+    shell:  "samtools faidx {input}"
+
+
+rule paralies_on_clean_base:
+    # Verification: the pre-purged assembly must yield nothing. This is also
+    # the floor drawn in the base-pair figure.
+    input:
+        fa  = "results/data/base.fa",
+        fai = "results/data/base.fa.fai",
+        gff = "results/data/base.gff3",
+    output:
+        bed     = "results/data/postpurge/to_remove.bed",
+        synteny = "results/data/postpurge/synteny_ks.tsv",
+    params:    threshold = THR
+    threads:   4
+    container: "dependencies/paralies_bench.sif"
+    script:    "scripts/run_paralies.py"
+
+
+# --- injection, replicated -------------------------------------------------
+# priority + temp() keep the DAG depth-first: breadth-first peaks near 90 GB.
+rule inject_experiment:
+    priority: 10
+    input:
+        fa  = "results/data/base.fa",
+        gff = "results/data/base.gff3",
+    output:
+        collapsed     = temp("results/exp/{exp}/rep{rep}/collapsed.fa"),
+        collapsed_gff = temp("results/exp/{exp}/rep{rep}/collapsed.gff3"),
+        truth         = "results/exp/{exp}/rep{rep}/truth_table.tsv",
+    params:
+        aks          = lambda w: EXPS[w.exp]["artifact_ks"],
+        pks          = lambda w: EXPS[w.exp]["paralogue_ks"],
+        gene_counts  = lambda w: EXPS[w.exp]["block_genes"],
+        n            = lambda w: EXPS[w.exp]["replicates"],
+        omega        = config["omega"],
+        indel_ratio  = config["indel_ratio"],
+        indel_mean   = config["indel_mean_bp"],
+        flank        = config["flank_bp"],
+        buffer_genes = config["buffer_genes"],
+        seed         = lambda w: config["seed"] + 1000 * int(w.rep),
+    container: "dependencies/paralies_bench.sif"
+    script:    "scripts/inject.py"
+
+
+rule index_collapsed:
+    priority: 60
+    input:  "results/exp/{exp}/rep{rep}/collapsed.fa"
+    output: "results/exp/{exp}/rep{rep}/collapsed.fa.fai"
+    container: "dependencies/paralies_bench.sif"
+    shell:  "samtools faidx {input}"
+
+
+rule apply_het_to_collapsed:
+    priority: 60
+    input:
+        fa  = "results/exp/ks/rep{rep}/collapsed.fa",
+        gff = "results/exp/ks/rep{rep}/collapsed.gff3",
+    output: temp("results/exp/ks/rep{rep}/het{het}/collapsed.fa")
+    params:
+        seed = lambda w: config["seed"] + 1000 * int(w.rep),
+        salt = 11,
+    container: "dependencies/paralies_bench.sif"
+    script:    "scripts/apply_het.py"
+
+
+rule index_het_collapsed:
+    priority: 60
+    input:  "results/exp/ks/rep{rep}/het{het}/collapsed.fa"
+    output: temp("results/exp/ks/rep{rep}/het{het}/collapsed.fa.fai")
+    container: "dependencies/paralies_bench.sif"
+    shell:  "samtools faidx {input}"
+
+
+# --- ParaLies --------------------------------------------------------------
+rule paralies_het:
+    priority: 80
+    input:
+        fa  = "results/exp/ks/rep{rep}/het{het}/collapsed.fa",
+        fai = "results/exp/ks/rep{rep}/het{het}/collapsed.fa.fai",
+        gff = "results/exp/ks/rep{rep}/collapsed.gff3",
+    output:
+        bed     = "results/exp/ks/rep{rep}/het{het}/paralies/to_remove.bed",
+        synteny = "results/exp/ks/rep{rep}/het{het}/paralies/synteny_ks.tsv",
+    params:    threshold = THR
+    threads:   1
+    container: "dependencies/paralies_bench.sif"
+    script:    "scripts/run_paralies.py"
+
+
+rule paralies_plain:
+    priority: 80
+    input:
+        fa  = "results/exp/{exp}/rep{rep}/collapsed.fa",
+        fai = "results/exp/{exp}/rep{rep}/collapsed.fa.fai",
+        gff = "results/exp/{exp}/rep{rep}/collapsed.gff3",
+    output:
+        bed     = "results/exp/{exp}/rep{rep}/paralies/to_remove.bed",
+        synteny = "results/exp/{exp}/rep{rep}/paralies/synteny_ks.tsv",
+    params:    threshold = THR
+    wildcard_constraints: exp = "genes|main"
+    threads:   1
+    container: "dependencies/paralies_bench.sif"
+    script:    "scripts/run_paralies.py"
+
+
+# --- annotation degradation ------------------------------------------------
+rule degrade_annotation:
+    priority: 60
+    input:  gff = "results/exp/main/rep{rep}/collapsed.gff3"
+    output: temp("results/degraded/rep{rep}/gff_{mode}{frac}.gff3")
+    params: seed = lambda w: config["seed"] + 1000 * int(w.rep)
+    container: "dependencies/paralies_bench.sif"
+    script:    "scripts/degrade.py"
+
+
+rule paralies_degraded:
+    priority: 80
+    input:
+        fa  = "results/exp/main/rep{rep}/collapsed.fa",
+        fai = "results/exp/main/rep{rep}/collapsed.fa.fai",
+        gff = "results/degraded/rep{rep}/gff_{mode}{frac}.gff3",
+    output:
+        bed     = "results/degraded/rep{rep}/paralies_{mode}{frac}/to_remove.bed",
+        synteny = "results/degraded/rep{rep}/paralies_{mode}{frac}/synteny_ks.tsv",
+    params:    threshold = THR
+    threads:   1
+    container: "dependencies/paralies_bench.sif"
+    script:    "scripts/run_paralies.py"
+
+
+# --- scoring ---------------------------------------------------------------
+rule score_het:
+    priority: 100
+    input:
+        truth   = "results/exp/ks/rep{rep}/truth_table.tsv",
+        fai     = "results/exp/ks/rep{rep}/collapsed.fa.fai",
+        bed     = "results/exp/ks/rep{rep}/het{het}/paralies/to_remove.bed",
+        synteny = "results/exp/ks/rep{rep}/het{het}/paralies/synteny_ks.tsv",
+    output:
+        blocks = "results/score/ks/rep{rep}_het{het}_blocks.tsv",
+        bp     = "results/score/ks/rep{rep}_het{het}_bp.tsv",
+    params:
+        threshold = THR, experiment = "ks",
+        rep = lambda w: w.rep, condition = lambda w: w.het,
+    container: "dependencies/paralies_bench.sif"
+    script:    "scripts/score_run.py"
+
+
+rule score_plain:
+    priority: 100
+    input:
+        truth   = "results/exp/{exp}/rep{rep}/truth_table.tsv",
+        fai     = "results/exp/{exp}/rep{rep}/collapsed.fa.fai",
+        bed     = "results/exp/{exp}/rep{rep}/paralies/to_remove.bed",
+        synteny = "results/exp/{exp}/rep{rep}/paralies/synteny_ks.tsv",
+    output:
+        blocks = "results/score/{exp}/rep{rep}_blocks.tsv",
+        bp     = "results/score/{exp}/rep{rep}_bp.tsv",
+    params:
+        threshold = THR, experiment = lambda w: w.exp,
+        rep = lambda w: w.rep, condition = "intact",
+    wildcard_constraints: exp = "genes|main"
+    container: "dependencies/paralies_bench.sif"
+    script:    "scripts/score_run.py"
+
+
+rule score_degraded:
+    priority: 100
+    input:
+        truth   = "results/exp/main/rep{rep}/truth_table.tsv",
+        fai     = "results/exp/main/rep{rep}/collapsed.fa.fai",
+        bed     = "results/degraded/rep{rep}/paralies_{mode}{frac}/to_remove.bed",
+        synteny = "results/degraded/rep{rep}/paralies_{mode}{frac}/synteny_ks.tsv",
+    output:
+        blocks = "results/score/degrade/rep{rep}_{mode}{frac}_blocks.tsv",
+        bp     = "results/score/degrade/rep{rep}_{mode}{frac}_bp.tsv",
+    params:
+        threshold = THR,
+        experiment = lambda w: f"degrade_{w.mode}",
+        rep = lambda w: w.rep, condition = lambda w: w.frac,
+    container: "dependencies/paralies_bench.sif"
+    script:    "scripts/score_run.py"
+
+
+rule aggregate_blocks:
+    input:
+        expand("results/score/ks/rep{rep}_het{het}_blocks.tsv", rep=REPS, het=HETS),
+        expand("results/score/{exp}/rep{rep}_blocks.tsv", exp=["genes", "main"], rep=REPS),
+        expand("results/score/degrade/rep{rep}_{mode}{frac}_blocks.tsv",
+               rep=REPS, mode=MODES, frac=FRACS),
+    output: "results/blocks_all.tsv"
+    script: "scripts/aggregate.py"
+
+
+rule aggregate_bp:
+    input:
+        expand("results/score/ks/rep{rep}_het{het}_bp.tsv", rep=REPS, het=HETS),
+        expand("results/score/{exp}/rep{rep}_bp.tsv", exp=["genes", "main"], rep=REPS),
+        expand("results/score/degrade/rep{rep}_{mode}{frac}_bp.tsv",
+               rep=REPS, mode=MODES, frac=FRACS),
+    output: "results/bp_all.tsv"
+    script: "scripts/aggregate.py"
+
+
+# --- scaling ladders, on the full assembly, no injection -------------------
+rule subset_genome_by_size:
+    input:
+        fa  = "results/data/genome.fa",
+        gff = "results/data/genome.gff3",
+    output:
+        fa  = "results/scale/size{mb}/genome.fa",
+        gff = "results/scale/size{mb}/genome.gff3",
+    params: target_mb = lambda w: w.mb
+    container: "dependencies/paralies_bench.sif"
+    script:    "scripts/make_subset.py"
+
+
+rule link_density_fasta:
+    input:  f"results/scale/size{DENS_MB}/genome.fa"
+    output: "results/scale/dens{drop}/genome.fa"
+    shell:  "cp {input} {output}"
+
+
+rule thin_annotation_for_density:
+    input:  gff = f"results/scale/size{DENS_MB}/genome.gff3"
+    output: "results/scale/dens{drop}/genome.gff3"
+    params: seed = config["seed"]
+    container: "dependencies/paralies_bench.sif"
+    script:    "scripts/thin_annotation.py"
+
+
+rule index_scale_genome:
+    input:  "results/scale/{point}/genome.fa"
+    output: "results/scale/{point}/genome.fa.fai"
+    wildcard_constraints: point = r"(size|dens)[0-9.]+"
+    container: "dependencies/paralies_bench.sif"
+    shell:  "samtools faidx {input}"
+
+
+rule paralies_scaling_point:
+    # The benchmark file IS the measurement behind panels (e) and (f).
+    input:
+        fa  = "results/scale/{point}/genome.fa",
+        fai = "results/scale/{point}/genome.fa.fai",
+        gff = "results/scale/{point}/genome.gff3",
+    output:
+        bed     = "results/scale/{point}/paralies/to_remove.bed",
+        synteny = "results/scale/{point}/paralies/synteny_ks.tsv",
+    params:    threshold = THR
+    wildcard_constraints: point = r"(size|dens)[0-9.]+"
+    threads:   4
+    benchmark: "results/benchmarks/paralies_scale_{point}.txt"
+    container: "dependencies/paralies_bench.sif"
+    script:    "scripts/run_paralies.py"
+
+
+rule collect_scaling:
+    input:
+        bench  = expand("results/benchmarks/paralies_scale_size{mb}.txt", mb=SIZES),
+        gff    = expand("results/scale/size{mb}/genome.gff3", mb=SIZES),
+        fai    = expand("results/scale/size{mb}/genome.fa.fai", mb=SIZES),
+        bed    = expand("results/scale/size{mb}/paralies/to_remove.bed", mb=SIZES),
+        dbench = expand("results/benchmarks/paralies_scale_dens{d}.txt", d=DENS),
+        dgff   = expand("results/scale/dens{d}/genome.gff3", d=DENS),
+        dfai   = expand("results/scale/dens{d}/genome.fa.fai", d=DENS),
+        dbed   = expand("results/scale/dens{d}/paralies/to_remove.bed", d=DENS),
+    output: "results/scaling.tsv"
+    container: "dependencies/paralies_bench.sif"
+    script: "scripts/collect_scaling.py"
+
+
+# --- figures ---------------------------------------------------------------
+rule figure_summary:
+    input:
+        blocks  = "results/blocks_all.tsv",
+        scaling = "results/scaling.tsv",
+    output:
+        png = "results/figure_summary.png",
+        pdf = "results/figure_summary.pdf",
+    params: threshold = THR
+    container: "dependencies/paralies_bench.sif"
+    script:    "scripts/make_summary_figure.py"
+
+
+rule figure_bp_errors:
+    input:
+        bp     = "results/bp_all.tsv",
+        blocks = "results/blocks_all.tsv",
+        bed    = "results/data/postpurge/to_remove.bed",
+        fai    = "results/exp/ks/rep00/collapsed.fa.fai",
+    output:
+        png = "results/figure_bp_errors.png",
+        pdf = "results/figure_bp_errors.pdf",
+    container: "dependencies/paralies_bench.sif"
+    script:    "scripts/make_bp_figure.py"
